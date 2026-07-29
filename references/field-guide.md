@@ -38,9 +38,21 @@ Reuse/update a match instead of creating a duplicate.
 
 The mini program opens an itinerary detail sheet when the user taps a day assignment. To make agent-written plans useful there:
 
+- Route fields by ownership instead of putting everything into one note:
+
+| User meaning | MCP field/tool | Mini program visibility |
+| --- | --- | --- |
+| Instructions for this specific visit | `update_assignment_time.notes` | `本次安排` in the assignment detail |
+| Stable POI introduction | `create_place.description` / `update_place.description` | `地点信息 → 地点介绍`, shown automatically when non-empty |
+| Reusable POI caveat | `create_place.notes` / `update_place.notes` | `地点信息 → 地点备注`, shown automatically when non-empty |
+| Address and contact | place `address`, `phone`, `website` | Primary address facts plus direct phone/website actions |
+| Booked time and voucher facts | reservation `reservation_time`, `reservation_end_time`, `confirmation_number`, `notes`, `url` | `预订信息`, linked through `assignment_id` |
+| Expense | budget `name`, `total_price`, `category`, `currency`, `expense_date`, `payers`, `member_ids`, `note` | Top-level `费用` tab |
+| Ticket image or PDF | `upload_trip_file` / `link_trip_file` with `assignment_id` or `reservation_id` | `票据与附件` in the assignment detail |
+
 - Put arrival instructions, meeting points, age restrictions, what to bring, and other readable guidance in the assignment or reservation `notes`.
 - Use `update_assignment_time.notes` for guidance specific to this visit. Use `update_place.notes` only for reusable place notes, and `update_place.description` for the public place introduction.
-- Keep the UI visibility contract intact: assignment `notes` appear as "本次安排"; place `address` appears in the primary facts; place `phone` and `website` appear as direct actions; place `description` and `notes` appear under the discoverable "更多地点信息" section.
+- Keep the UI visibility contract intact: assignment `notes` appear as "本次安排"; place `address` appears in the primary facts; place `phone` and `website` appear as direct actions. Since mini program 0.2.18, place `description` and `notes` are shown directly in "地点信息" when at least one exists; the section is hidden when both are empty.
 - Treat every written field as a readback obligation. After `create_place`, `create_and_assign_place`, `update_place`, or `update_assignment_time`, call `list_places` or `get_trip_summary` and verify the exact value. Do not write opaque data to fields that the user cannot reach in the mini program.
 - Create a reservation for a ticket, restaurant, tour, study activity, or event and link it with `assignment_id`.
 - Use `confirmation_number` only for a real order/booking code.
