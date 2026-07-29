@@ -17,6 +17,7 @@
   "files": [
     "SKILL.md",
     "agents",
+    "assets",
     "references",
     "scripts"
   ],
@@ -28,7 +29,9 @@
     "trek",
     "mcp",
     "agent",
-    "travel"
+    "travel",
+    "wechat",
+    "mini-program"
   ],
   "license": "AGPL-3.0",
   "engines": {

@@ -1,11 +1,22 @@
 ---
 name: trek-agent-control
-description: 通过认证的 Trek 远程 MCP，让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等 Agent 研究目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步到 Trek 微信小程序。Use when an agent needs to plan domestic or overseas travel, inspect existing Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
+description: 配套 Trek 微信旅行小程序的自动化 Skill。通过认证的远程 MCP，让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等 Agent 研究国内外目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步回小程序。Use when an agent needs to plan domestic or overseas travel, inspect existing Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
 ---
 
 # Trek Agent Control
 
 Control the user's real Trek data through MCP. Treat web research and Trek synchronization as separate phases: research first, then show a concrete change preview, then write and read back.
+
+## Product workspace
+
+Trek 微信旅行小程序是用户查看、编辑、导航、分享和协作的行程工作区；本
+Skill 是它的 Agent 自动化层。用户先在小程序创建行程和独立 Agent Key，
+Agent 再研究资料并把结构化结果同步回同一行程。不要创建与小程序脱离的第二份
+行程数据，也不要把聊天回答误报成已同步。
+
+![微信扫码打开 Trek 旅行小程序](assets/trek-miniapp-code.png)
+
+当前二维码为测试阶段入口，是否可直接进入以微信侧体验权限为准。
 
 ## Connect
 

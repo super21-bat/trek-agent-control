@@ -1,4 +1,4 @@
 interface:
-  display_name: "Trek 旅行 Agent"
-  short_description: "连接 Trek MCP，研究、规划并同步微信旅行小程序"
-  default_prompt: "使用 $trek-agent-control 搜寻资料、制定行程并安全同步到我的 Trek 小程序。"
+  display_name: "Trek 小程序旅行 Agent"
+  short_description: "研究国内外旅行并同步到 Trek 微信小程序"
+  default_prompt: "使用 $trek-agent-control 搜寻资料、制定行程，并把结构化结果安全同步到我的 Trek 微信小程序。"

@@ -1,32 +1,66 @@
-# Trek Agent Control
+# Trek 微信旅行小程序 × Agent 自动化
 
-让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等 Agent 通过认证的远程
-MCP 安全读取、规划并同步 Trek 微信小程序中的真实行程。
+让旅行计划不只停留在聊天记录里。Trek 把微信小程序作为用户可见、可编辑、
+可协作的行程中心，再让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等
+Agent 通过认证 MCP 研究资料、制定计划，并把结构化结果同步回小程序。
 
 [![Verify and publish](https://github.com/super21-bat/trek-agent-control/actions/workflows/release.yml/badge.svg)](https://github.com/super21-bat/trek-agent-control/actions/workflows/release.yml)
 
-## 能做什么
+<p align="center">
+  <img src="assets/trek-miniapp-code.png" alt="微信扫码打开 Trek 旅行小程序" width="240" />
+</p>
 
-- 读取、新建和更新国内或海外行程。
-- 管理逐日日程、地点、交通方式、时间和当次安排。
-- 管理酒店、机票、门票等预订及确认号。
-- 上传并关联二维码、图片和 PDF。
-- 管理费用、清单、待办、成员和协作提案。
-- 写入后自动回读，检查计划是否真正显示在小程序中。
-- 通过 `doctor` 诊断配置、网络、鉴权、工具发现和读取能力。
+<p align="center">
+  <strong>微信扫码打开 Trek 旅行小程序</strong><br />
+  <sub>当前为测试阶段，是否可直接进入以微信侧体验权限为准。</sub>
+</p>
+
+## 小程序和 Agent 如何配合
+
+```text
+微信小程序创建行程与 Agent Key
+            ↓
+Agent 搜寻攻略、交通、餐饮和预订信息
+            ↓
+通过 Trek MCP 写入日程、地点、费用、票据与清单
+            ↓
+用户在小程序查看、修改、导航、分享和共同协作
+```
+
+小程序是行程的可视化工作区和最终数据来源；本仓库提供的是自动化接入层，
+不是另一套旅行应用，也不会把用户数据保存到 GitHub。每个 Agent 使用独立、
+可撤销的 Key，用户可以在微信端停止连接。
+
+## 在小程序里可以做什么
+
+- 查看首页下一站、当天时间线和地图导航。
+- 编排国内或海外多日行程，维护地点、交通方式和当次安排。
+- 保存酒店、机票、门票等预订信息、确认号、二维码、图片和 PDF。
+- 管理费用、出发清单、待办事项和行程状态。
+- 邀请同行者共同查看和修改行程。
+- 为不同 Agent 创建独立连接，随时撤销不再使用的 Key。
+
+## Agent 可以自动完成什么
+
+- 结合用户时间、同行人、预算和已确认预订研究可执行的旅行方案。
+- 读取、新建和更新行程、逐日日程、地点、交通与时间。
+- 管理住宿、航班、门票、餐厅预订及关联附件。
+- 写入费用、清单、待办、成员和协作提案。
+- 写入后自动回读，核对计划是否真正出现在小程序对应位置。
+- 使用 `doctor` 检查配置、网络、鉴权、工具发现与读取能力。
 
 ## 适合哪些 Agent
 
-- 原生支持 Streamable HTTP MCP 的 Agent：直接配置 MCP URL 和 Bearer Key。
-- 支持终端但不支持远程 MCP 的 Agent：安装零依赖 Node.js CLI。
-- OpenClaw：可从 ClawHub 安装 Skill，再使用独立 Trek Agent Key。
+- **原生支持 Streamable HTTP MCP**：直接配置 MCP URL 和 Bearer Key。
+- **支持终端但不支持远程 MCP**：安装零依赖 Node.js CLI。
+- **OpenClaw**：从 ClawHub 安装 Skill，再使用小程序生成的独立 Trek Agent Key。
 
-每个 Agent 应使用独立、可撤销的 Key。仓库中不包含任何用户 Key、行程数据、
-小程序源码或服务端凭据。
+仓库中不包含任何用户 Key、行程数据、小程序源码或服务端凭据。
 
 ## 快速开始
 
-要求 Node.js 18 或更高版本。
+先在 Trek 小程序的「我的 → Agent 连接」创建连接并复制配置。要求
+Node.js 18 或更高版本：
 
 ```bash
 npm install -g github:super21-bat/trek-agent-control
@@ -50,7 +84,7 @@ Authorization: Bearer <用户自己的 Trek Agent Key>
 
 不要把真实 Key 写入 Git、聊天记录、截图、共享日志或公共配置示例。
 
-## 核心原则
+## Agent 执行原则
 
 1. 先读取现有行程，再研究和生成计划。
 2. 写入前展示变更预览，避免覆盖真实数据。
@@ -91,7 +125,11 @@ trek batch /absolute/path/actions.json --apply
 - npm 包尚未作为正式入口时，以本 README 的 GitHub 安装命令为准。
 - GitHub、ClawHub、npm 三者的“已发布”状态必须分别验证。
 
-## 许可证
+## 开源与致谢
+
+Trek 中国版复用并扩展开源项目
+[liketrek/TREK](https://github.com/liketrek/TREK) 的旅行管理与 MCP 能力，
+面向微信小程序、中国大陆服务和国内外行程场景进行了适配。
 
 GitHub 仓库内容按 [AGPL-3.0](LICENSE) 发布。发布到 ClawHub 的 Skill 副本
 遵循 ClawHub 平台规定的 MIT-0。

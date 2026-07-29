@@ -15,6 +15,7 @@ Hermes 和人工开发者。目标是让 GitHub、ClawHub、Trek MCP 与微信�
 - `scripts/trek-mcp.mjs`：零依赖 CLI 与 MCP 客户端。
 - `tests/`：CLI、配置和 Skill 回归测试。
 - `agents/openai.yaml`：Skill 展示元数据。
+- `assets/trek-miniapp-code.png`：GitHub 与 ClawHub 使用的小程序二维码。
 
 这里不存放小程序源码、服务端源码、数据库、用户行程或任何真实 Key。
 
@@ -167,14 +168,17 @@ ClawHub 是 Skill 目录，不替代 GitHub 源码与自动测试。同步前必
 - 安装说明指向公开仓库。
 
 本仓库同时包含 npm CLI 的 `package.json`，直接发布仓库根目录可能被 ClawHub
-识别为插件。Skill 发布必须使用只包含 `SKILL.md` 和 `references/` 的临时
-目录；`README.md` 与 `MAINTAINING.md` 是 GitHub 用户文档，不进入 Skill：
+识别为插件。Skill 发布必须使用只包含 `SKILL.md`、`references/` 和公开
+二维码素材的临时目录；`README.md` 与 `MAINTAINING.md` 是 GitHub 用户文档，
+不进入 Skill：
 
 ```bash
 skill_dir="$(mktemp -d)/trek-agent-control"
 mkdir -p "$skill_dir"
 cp SKILL.md "$skill_dir/"
 cp -R references "$skill_dir/"
+mkdir -p "$skill_dir/assets"
+cp assets/trek-miniapp-code.png "$skill_dir/assets/"
 
 clawhub skill publish "$skill_dir" \
   --slug trek-agent-control \
@@ -184,7 +188,7 @@ clawhub skill publish "$skill_dir" \
   --source-commit "$(git rev-parse HEAD)" \
   --source-ref main \
   --source-path . \
-  --changelog "同步最新 MCP 字段归属、回读规则与维护说明"
+  --changelog "增加 Trek 微信小程序介绍、二维码入口与 Agent 自动化说明"
 ```
 
 ClawHub 当前对发布到目录的 Skill 统一采用 MIT-0；GitHub 仓库中的 CLI 仍按
