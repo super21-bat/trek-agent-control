@@ -1,6 +1,6 @@
 ---
 name: trek-agent-control
-description: Connect any shell-capable or MCP-capable agent to Trek China through its authenticated remote MCP endpoint. Use when an agent must research destinations, create or revise a trip, synchronize schedules/places/reservations/accommodations/budgets/packing/todos/notes/proposals to the Trek WeChat mini program, inspect a user's existing trips, or run safe production diagnostics with a user-provided trek_ key.
+description: 通过认证的 Trek 远程 MCP，让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等 Agent 研究目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步到 Trek 微信小程序。Use when an agent needs to plan domestic or overseas travel, inspect existing Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
 ---
 
 # Trek Agent Control

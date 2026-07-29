@@ -167,13 +167,13 @@ ClawHub 是 Skill 目录，不替代 GitHub 源码与自动测试。同步前必
 - 安装说明指向公开仓库。
 
 本仓库同时包含 npm CLI 的 `package.json`，直接发布仓库根目录可能被 ClawHub
-识别为插件。Skill 发布必须使用只包含 `SKILL.md`、`references/` 和维护说明
-的临时目录：
+识别为插件。Skill 发布必须使用只包含 `SKILL.md` 和 `references/` 的临时
+目录；`README.md` 与 `MAINTAINING.md` 是 GitHub 用户文档，不进入 Skill：
 
 ```bash
 skill_dir="$(mktemp -d)/trek-agent-control"
 mkdir -p "$skill_dir"
-cp SKILL.md MAINTAINING.md "$skill_dir/"
+cp SKILL.md "$skill_dir/"
 cp -R references "$skill_dir/"
 
 clawhub skill publish "$skill_dir" \
