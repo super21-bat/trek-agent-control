@@ -14,7 +14,7 @@ Skill 是它的 Agent 自动化层。用户先在小程序创建行程和独立 
 Agent 再研究资料并把结构化结果同步回同一行程。不要创建与小程序脱离的第二份
 行程数据，也不要把聊天回答误报成已同步。
 
-![微信扫码打开 Trek 旅行小程序](assets/trek-miniapp-code.png)
+![微信扫码打开 Trek 旅行小程序](https://raw.githubusercontent.com/super21-bat/trek-agent-control/main/assets/trek-miniapp-code.png)
 
 当前二维码为测试阶段入口，是否可直接进入以微信侧体验权限为准。
 

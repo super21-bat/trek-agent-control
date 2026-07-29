@@ -168,17 +168,15 @@ ClawHub 是 Skill 目录，不替代 GitHub 源码与自动测试。同步前必
 - 安装说明指向公开仓库。
 
 本仓库同时包含 npm CLI 的 `package.json`，直接发布仓库根目录可能被 ClawHub
-识别为插件。Skill 发布必须使用只包含 `SKILL.md`、`references/` 和公开
-二维码素材的临时目录；`README.md` 与 `MAINTAINING.md` 是 GitHub 用户文档，
-不进入 Skill：
+识别为插件。Skill 发布必须使用只包含 `SKILL.md` 和 `references/` 的临时
+目录；`README.md`、`MAINTAINING.md` 与二进制素材不进入 Skill。ClawHub
+当前会忽略图片文件，因此 `SKILL.md` 的二维码使用公开 GitHub raw 地址：
 
 ```bash
 skill_dir="$(mktemp -d)/trek-agent-control"
 mkdir -p "$skill_dir"
 cp SKILL.md "$skill_dir/"
 cp -R references "$skill_dir/"
-mkdir -p "$skill_dir/assets"
-cp assets/trek-miniapp-code.png "$skill_dir/assets/"
 
 clawhub skill publish "$skill_dir" \
   --slug trek-agent-control \
