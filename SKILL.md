@@ -16,7 +16,7 @@ Control the user's real Trek data through MCP. Treat web research and Trek synch
 3. Use the Trek CLI to install/sync this Skill, verify the connection, and diagnose failures:
 
 ```bash
-npm install -g @trek-cn/cli@latest
+npm install -g github:super21-bat/trek-agent-control
 trek config init --api-key 'trek_...' --url 'https://api.superd.fun/mcp'
 trek skill sync --global
 trek doctor

@@ -15,6 +15,9 @@ import { fileURLToPath } from 'node:url';
 
 const CLI_VERSION = '0.1.0';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
+const NPM_PACKAGE = '@trek-cn/cli';
+const GITHUB_INSTALL_SPEC = 'github:super21-bat/trek-agent-control';
+const NPM_REGISTRY = 'https://registry.npmjs.org';
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const configPath = process.env.TREK_CONFIG || join(homedir(), '.trek', 'config.json');
 const storedConfig = readConfig();
@@ -255,19 +258,33 @@ function skillCommand(args) {
 
 function updateCommand(args) {
   const current = packageVersion();
-  const lookup = spawnSync('npm', ['view', '@trek-cn/cli', 'version'], { encoding: 'utf8' });
+  const lookup = spawnSync('npm', ['view', NPM_PACKAGE, 'version', `--registry=${NPM_REGISTRY}`], { encoding: 'utf8' });
   if (lookup.error) throw new Error(`cannot start npm: ${lookup.error.message}`);
-  if (lookup.status !== 0) throw new Error(`cannot query the latest CLI version: ${(lookup.stderr || '').trim()}`);
+  if (lookup.status !== 0 && args.includes('--check')) {
+    return print({
+      ok: true,
+      current,
+      latest: null,
+      source: 'github',
+      updateAvailable: null,
+      message: `The npm package is not published yet. Reinstall from ${GITHUB_INSTALL_SPEC} to refresh.`,
+    });
+  }
+  if (lookup.status !== 0) return installUpdate(current, GITHUB_INSTALL_SPEC, 'github');
   const latest = lookup.stdout.trim();
   if (args.includes('--check')) return print({ ok: true, current, latest, updateAvailable: current !== latest });
   if (current === latest) return print({ ok: true, current, latest, updated: false, message: 'Trek CLI is already up to date.' });
-  const installed = spawnSync('npm', ['install', '-g', '@trek-cn/cli@latest'], { stdio: 'inherit' });
+  return installUpdate(current, `${NPM_PACKAGE}@latest`, 'npm', latest);
+}
+
+function installUpdate(current, installSpec, source, latest = null) {
+  const installed = spawnSync('npm', ['install', '-g', installSpec], { stdio: 'inherit' });
   if (installed.error) throw new Error(`cannot start npm install: ${installed.error.message}`);
   if (installed.status !== 0) throw new Error(`CLI update failed with exit code ${installed.status}`);
   const synced = spawnSync('trek', ['skill', 'sync', '--global'], { stdio: 'inherit' });
   if (synced.error) throw new Error(`CLI updated, but Skill sync could not start: ${synced.error.message}`);
   if (synced.status !== 0) throw new Error(`CLI updated, but Skill sync failed with exit code ${synced.status}`);
-  return print({ ok: true, previous: current, current: latest, updated: true, skillSynced: true, nextCommand: 'trek doctor' });
+  return print({ ok: true, previous: current, current: latest, source, updated: true, skillSynced: true, nextCommand: 'trek doctor' });
 }
 
 function localDoctorChecks() {
