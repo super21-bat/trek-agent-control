@@ -40,6 +40,8 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 
 - Put arrival instructions, meeting points, age restrictions, what to bring, and other readable guidance in the assignment or reservation `notes`.
 - Use `update_assignment_time.notes` for guidance specific to this visit. Use `update_place.notes` only for reusable place notes, and `update_place.description` for the public place introduction.
+- Keep the UI visibility contract intact: assignment `notes` appear as "本次安排"; place `address` appears in the primary facts; place `phone` and `website` appear as direct actions; place `description` and `notes` appear under the discoverable "更多地点信息" section.
+- Treat every written field as a readback obligation. After `create_place`, `create_and_assign_place`, `update_place`, or `update_assignment_time`, call `list_places` or `get_trip_summary` and verify the exact value. Do not write opaque data to fields that the user cannot reach in the mini program.
 - Create a reservation for a ticket, restaurant, tour, study activity, or event and link it with `assignment_id`.
 - Use `confirmation_number` only for a real order/booking code.
 - Use `reservation_time` and `reservation_end_time` for the booked time window.
