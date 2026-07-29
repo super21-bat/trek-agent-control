@@ -1,0 +1,29 @@
+{
+  "name": "@trek-cn/cli",
+  "version": "0.1.0",
+  "description": "Trek MCP CLI and Agent Skill",
+  "type": "module",
+  "bin": {
+    "trek": "scripts/trek-mcp.mjs"
+  },
+  "files": [
+    "SKILL.md",
+    "agents",
+    "references",
+    "scripts"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "prepack": "node scripts/trek-mcp.mjs skill check"
+  },
+  "keywords": [
+    "trek",
+    "mcp",
+    "agent",
+    "travel"
+  ],
+  "license": "AGPL-3.0",
+  "engines": {
+    "node": ">=18"
+  }
+}
