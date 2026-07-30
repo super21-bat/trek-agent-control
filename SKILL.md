@@ -1,6 +1,6 @@
 ---
 name: trek-agent-control
-description: 配套 Trek 微信旅行小程序的自动化 Skill。通过认证的远程 MCP，让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等 Agent 研究国内外目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步回小程序。Use when an agent needs to plan domestic or overseas travel, inspect existing Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
+description: 配套 Trek 微信旅行小程序的自动化 Skill，主要面向 WorkBuddy，也兼容 Codex、Claude、OpenClaw、Hermes 等 Agent。通过认证的远程 MCP 研究国内外目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步回小程序。Use when WorkBuddy or another agent needs to plan travel, inspect Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
 ---
 
 # Trek Agent Control
@@ -33,12 +33,12 @@ trek skill sync --global
 trek doctor
 ```
 
-The mini program copies these commands, the endpoint, and the one-time key as one Agent access bundle. Treat the whole bundle as a secret. If native remote MCP is unavailable or unreliable, execute all operations through `trek`; it calls the same MCP endpoint. Read [references/configuration.md](references/configuration.md) when installing this skill in WorkBuddy, OpenClaw, Hermes, Claude, Codex, or another agent runtime.
+The mini program presents this to ordinary users as two steps: copy once, then send the copied bundle to WorkBuddy. WorkBuddy should complete installation, configuration, Skill sync, and `doctor` without asking the user to run commands manually. Treat the whole bundle as a secret. If native remote MCP is unavailable or unreliable, execute all operations through `trek`; it calls the same MCP endpoint. Read [references/configuration.md](references/configuration.md) for runtime details.
 
 ## Mandatory workflow
 
 1. Run `doctor` or native `tools/list`. Stop on authentication, network, or missing-tool failure.
-2. Read existing state with `list_trips` and `get_trip_summary`. Never assume a trip ID.
+2. Read existing state with `list_trips` and `get_trip_summary`. Never assume a trip ID. Use top-level `places[]` for every trip place, including unassigned places; use `packing.bags[]` for all bags, including empty bags.
 3. Research current facts with primary/official sources first. Separate confirmed facts, recommendations, and unresolved items.
 4. Build a dated plan and an `expectedAssignmentsByDate` checklist containing every POI/activity that must appear in the mini program. Use exact local dates and times. Do not invent reservations, confirmation numbers, phone numbers, opening hours, prices, or addresses.
 5. Show the user a compact change preview before destructive, bulk, financial, membership, proposal-decision, or rescheduling writes.
@@ -68,7 +68,7 @@ trek batch /absolute/path/actions.json --apply
 trek smoke --allow-write-smoke
 ```
 
-`doctor` reports local configuration, endpoint, credential presence, Skill integrity, authentication, live tool count, and trip readback. Failures include a category, hint, and next command; retain that structured output when diagnosing. `update --check` compares CLI versions; `update` upgrades the CLI and resynchronizes the Skill. `audit-plan` compares an expected JSON date-to-place mapping with live `days[].assignments` and exits non-zero on missing items. `upload-file` reads a local attachment without printing its base64 and supports files up to 10 MB. `rename-file` changes only the display name and keeps the extension. `batch` is dry-run unless `--apply` is present. It refuses high-risk tool names unless `--confirm-high-risk` is also present. `smoke` creates temporary data, exercises the proposal lifecycle, deletes it, and closes the MCP session.
+`doctor` reports local configuration, endpoint, credential presence, Skill integrity, authentication, live tool count, and trip readback. Failures include a category, hint, and next command; retain that structured output when diagnosing. `update --check` compares CLI versions; `update` upgrades the CLI and resynchronizes the Skill. `audit-plan` compares an expected JSON date-to-place mapping with live `days[].assignments` and exits non-zero on missing items. `upload-file` reads a local attachment without printing its base64 and supports files up to 10 MB. `rename-file` changes only the display name and keeps the extension. `batch` is dry-run unless `--apply` is present. Applied actions always expose `ok`, `resourceType`, `resource`, `warnings`, and the original `result`; execution stops on the first failed action. It refuses high-risk tool names unless `--confirm-high-risk` is also present. `smoke` creates temporary data, exercises the proposal lifecycle, deletes it, and closes the MCP session.
 
 ## Safety invariants
 

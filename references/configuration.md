@@ -1,5 +1,11 @@
 # Runtime configuration
 
+## WorkBuddy first
+
+The mini program gives the user only two steps: tap “创建并复制”, then send the copied bundle to WorkBuddy. WorkBuddy must complete the commands, Skill sync, and `doctor` itself. Do not ask a non-technical user to choose between MCP and CLI.
+
+Use native Streamable HTTP MCP when WorkBuddy exposes it. Otherwise use the CLI fallback from the same copied bundle.
+
 ## Native Streamable HTTP MCP
 
 Use the runtime's secret manager for `TREK_MCP_TOKEN`. The common configuration shape is:
@@ -45,7 +51,9 @@ Optional environment overrides:
 - `TREK_MCP_TIMEOUT_MS`: per-request timeout, default `20000`.
 - `TREK_MCP_RETRIES`: retry count for 429/502/503/504 and network errors, default `7`.
 
-## WorkBuddy, OpenClaw and Hermes
+## Other compatible agents
+
+Codex, Claude, OpenClaw, Hermes and other terminal-capable agents follow the same connection sequence:
 
 1. Install the CLI and run `trek skill sync --global`.
 2. Run `trek config init` with the user's one-time key.

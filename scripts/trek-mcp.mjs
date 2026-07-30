@@ -12,8 +12,9 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.1.0';
+const CLI_VERSION = '0.1.1';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'github:super21-bat/trek-agent-control';
@@ -487,10 +488,26 @@ async function main() {
       if (risky.length && !args.includes('--confirm-high-risk')) throw new Error(`high-risk tools require --confirm-high-risk: ${[...new Set(risky)].join(', ')}`);
       const results = [];
       for (const [index, action] of actions.entries()) {
-        const value = await client.callTool(action.tool, action.arguments);
-        results.push({ index, label: action.label || null, tool: action.tool, result: value });
+        try {
+          const value = await client.callTool(action.tool, action.arguments);
+          results.push({ index, label: action.label || null, tool: action.tool, ...normalizeBatchResult(value) });
+        } catch (error) {
+          results.push({ index, label: action.label || null, tool: action.tool, ...normalizeBatchError(error) });
+          break;
+        }
       }
-      return print({ ok: true, dryRun: false, count: results.length, results });
+      const failureCount = results.filter((result) => !result.ok).length;
+      print({
+        ok: failureCount === 0 && results.length === actions.length,
+        dryRun: false,
+        requestedCount: actions.length,
+        count: results.length,
+        failureCount,
+        stoppedEarly: results.length < actions.length,
+        results,
+      });
+      if (failureCount || results.length < actions.length) process.exitCode = 2;
+      return;
     }
     if (command === 'smoke') {
       if (!args.includes('--allow-write-smoke')) throw new Error('smoke creates temporary data; pass --allow-write-smoke');

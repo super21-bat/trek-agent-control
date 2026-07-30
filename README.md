@@ -1,8 +1,9 @@
 # Trek 微信旅行小程序 × Agent 自动化
 
 让旅行计划不只停留在聊天记录里。Trek 把微信小程序作为用户可见、可编辑、
-可协作的行程中心，再让 Codex、Claude、OpenClaw、Hermes、WorkBuddy 等
-Agent 通过认证 MCP 研究资料、制定计划，并把结构化结果同步回小程序。
+可协作的行程中心，用户只要复制一次并发给 WorkBuddy，它就能研究资料、
+制定计划，并把结构化结果同步回小程序。Codex、Claude、OpenClaw、Hermes
+等支持 MCP 或命令行的 Agent 也兼容同一套接入方式。
 
 [![Verify and publish](https://github.com/super21-bat/trek-agent-control/actions/workflows/release.yml/badge.svg)](https://github.com/super21-bat/trek-agent-control/actions/workflows/release.yml)
 
@@ -49,11 +50,19 @@ Agent 搜寻攻略、交通、餐饮和预订信息
 - 写入后自动回读，核对计划是否真正出现在小程序对应位置。
 - 使用 `doctor` 检查配置、网络、鉴权、工具发现与读取能力。
 
-## 适合哪些 Agent
+## 两步连接 WorkBuddy
+
+1. 在 Trek 小程序“我的”页面点“创建并复制”。
+2. 打开 WorkBuddy，把复制内容直接发给它。
+
+安装、配置、Skill 同步和连接检查都由 WorkBuddy 完成，普通用户不需要理解
+MCP、CLI 或 `doctor`。
+
+## 其他兼容 Agent
 
 - **原生支持 Streamable HTTP MCP**：直接配置 MCP URL 和 Bearer Key。
 - **支持终端但不支持远程 MCP**：安装零依赖 Node.js CLI。
-- **OpenClaw**：从 ClawHub 安装 Skill，再使用小程序生成的独立 Trek Agent Key。
+- **Codex / Claude / OpenClaw / Hermes**：使用同一个复制接入包；支持原生 MCP 时直接连接，否则使用 CLI。
 
 仓库中不包含任何用户 Key、行程数据、小程序源码或服务端凭据。
 

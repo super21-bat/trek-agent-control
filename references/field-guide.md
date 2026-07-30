@@ -5,7 +5,7 @@ Always discover the live schemas with `tools/list`. The server evolves and the l
 ## Core read path
 
 - `list_trips`: identify accessible trips.
-- `get_trip_summary`: trip, days, assignments, reservations, accommodations, budget, packing, todos, notes and members.
+- `get_trip_summary`: trip, top-level deduplicated places, days, assignments, reservations, accommodations, budget, packing items and bags, todos, notes and members.
 - Relevant `list_*`: obtain full records before editing or deleting.
 
 ## Common write groups
@@ -83,7 +83,7 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 ]
 ```
 
-Without `--apply`, the client prints the planned calls and performs no tools. With `--apply`, calls run sequentially and stop on the first error. Tool names containing delete/remove/decide/schedule/settle/restore/rotate require `--confirm-high-risk`.
+Without `--apply`, the client prints the planned calls and performs no tools. With `--apply`, calls run sequentially and stop on the first error. Every result has the same compatibility envelope: `ok`, `resourceType`, `resource`, `warnings`, and the original tool payload in `result`. Tool names containing delete/remove/decide/schedule/settle/restore/rotate require `--confirm-high-risk`.
 
 ## Readback checklist
 
@@ -103,4 +103,6 @@ Verify:
 - budget currency, amount, persons/days and notes
 - every expense and reservation created by the agent is editable and visible in the mini program's corresponding top-level tab
 - no duplicate packing/todo/note names
+- top-level `places[]` includes assigned and unassigned places
+- `packing.bags[]` includes empty bags as well as bags referenced by items
 - unresolved facts remain todos or explicit notes
