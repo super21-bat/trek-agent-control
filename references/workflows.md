@@ -20,7 +20,8 @@
 7. Add packing items for traveler and destination needs.
 8. Add todos for unresolved bookings, deadlines, safety checks and missing documents. Use due dates and priority.
 9. Add collaboration notes for cross-cutting instructions that must remain visible.
-10. Read back and compare each date's normalized assignment place names/IDs to `expectedAssignmentsByDate`. Any planned day with zero assignments, any expected place missing, or any POI present only in day-note text is a failed synchronization. Fix it before reporting completion. Intentional rest/location-free travel days must be marked explicitly.
+10. When adding a trip cover or place image, upload the image, write the returned authenticated `file.url` to `trip.cover_image` or `place.image_url`, and verify both values on readback. A successful file upload without the entity field is incomplete.
+11. Read back and compare each date's normalized assignment place names/IDs to `expectedAssignmentsByDate`. Any planned day with zero assignments, any expected place missing, or any POI present only in day-note text is a failed synchronization. Fix it before reporting completion. Intentional rest/location-free travel days must be marked explicitly.
 
 Save the full expected checklist as a JSON object when using the bundled audit command. An empty array explicitly marks a rest/location-free day:
 

@@ -46,6 +46,8 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 | Stable POI introduction | `create_place.description` / `update_place.description` | `地点信息 → 地点介绍`, shown automatically when non-empty |
 | Reusable POI caveat | `create_place.notes` / `update_place.notes` | `地点信息 → 地点备注`, shown automatically when non-empty |
 | Address and contact | place `address`, `phone`, `website` | Primary address facts plus direct phone/website actions |
+| Trip cover | `upload_trip_file`, then `update_trip.cover_image` with the returned `file.url` | Trip list, Home hero and trip detail cover |
+| Place image | `upload_trip_file` with `place_id`, then `create_place.image_url` / `update_place.image_url` with the returned `file.url` | Place detail image and Home fallback image |
 | Booked time and voucher facts | reservation `reservation_time`, `reservation_end_time`, `confirmation_number`, `notes`, `url` | `预订信息`, linked through `assignment_id` |
 | Expense | budget `name`, `total_price`, `category`, `currency`, `expense_date`, `payers`, `member_ids`, `note` | Top-level `费用` tab |
 | Ticket image or PDF | `upload_trip_file` / `link_trip_file` with `assignment_id` or `reservation_id` | `票据与附件` in the assignment detail |
@@ -59,6 +61,7 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 - Use `reservation_time` and `reservation_end_time` for the booked time window.
 - Use `url` for the official voucher, ticket, or booking page.
 - Uploaded images and PDFs remain trip files. Link them to the reservation or assignment instead of placing base64 data or long image URLs in notes.
+- For a visible trip cover or place image, upload the image as a trip file, persist the returned authenticated relative `file.url` in `cover_image` or `image_url`, then read back both the file link and entity field. Uploading bytes alone does not make an image visible.
 - Use `upload_trip_file` for an attachment up to 10 MB, or the bundled `upload-file` command so raw base64 never appears in terminal output. Use `list_trip_files` for readback, `link_trip_file` to add another relationship, and `trash_trip_file` to remove it from the active trip.
 - Keep the reservation `pending` until the user supplies booking evidence; then update it to `confirmed`.
 - The mini program's "预订" tab is the single editable reservation inventory. Legacy `day_assignments.reservation_*` fields are read-only compatibility data; do not write new booking data there.
