@@ -14,10 +14,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.1.1';
+const CLI_VERSION = '0.1.2';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
-const GITHUB_INSTALL_SPEC = 'github:super21-bat/trek-agent-control';
+const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
 const NPM_REGISTRY = 'https://registry.npmjs.org';
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const configPath = process.env.TREK_CONFIG || join(homedir(), '.trek', 'config.json');

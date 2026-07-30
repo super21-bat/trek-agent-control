@@ -31,7 +31,7 @@ Runtimes may spell the type `http`, `streamable_http`, or `streamable-http`. Do 
 Requirements: Node.js 18 or newer and outbound HTTPS.
 
 ```bash
-npm install -g github:super21-bat/trek-agent-control
+npm install -g https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz
 trek config init --api-key 'trek_...' --url 'https://api.superd.fun/mcp'
 trek skill sync --global
 trek doctor
@@ -39,7 +39,9 @@ trek doctor
 
 The mini program provides the endpoint, commands, and one-time key in one copied Agent access bundle. Do not split or repost that bundle. `trek config init` stores the key in `~/.trek/config.json` with mode `0600` on POSIX systems.
 
-The public bootstrap source is `https://github.com/super21-bat/trek-agent-control`.
+The public bootstrap source is the repository's stable branch tarball. Do not use
+the `github:owner/repo` npm shorthand for global installation: some npm versions
+link it to a temporary clone and leave a broken `trek` command after cleanup.
 After `@trek-cn/cli` is published to npm, the shorter
 `npm install -g @trek-cn/cli@latest` command may replace the GitHub install.
 

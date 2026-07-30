@@ -72,7 +72,7 @@ MCP、CLI 或 `doctor`。
 Node.js 18 或更高版本：
 
 ```bash
-npm install -g github:super21-bat/trek-agent-control
+npm install -g https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz
 trek config init --api-key '由用户单独提供' --url 'https://api.superd.fun/mcp'
 trek skill sync --global
 trek doctor

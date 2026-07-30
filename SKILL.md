@@ -27,7 +27,7 @@ Agent 再研究资料并把结构化结果同步回同一行程。不要创建�
 3. Use the Trek CLI to install/sync this Skill, verify the connection, and diagnose failures:
 
 ```bash
-npm install -g github:super21-bat/trek-agent-control
+npm install -g https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz
 trek config init --api-key 'trek_...' --url 'https://api.superd.fun/mcp'
 trek skill sync --global
 trek doctor

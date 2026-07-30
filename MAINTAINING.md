@@ -78,9 +78,11 @@ git diff --check
 
 ```bash
 tmp_dir="$(mktemp -d)"
-npm install --prefix "$tmp_dir" "github:super21-bat/trek-agent-control"
-"$tmp_dir/node_modules/.bin/trek" --version
-"$tmp_dir/node_modules/.bin/trek" skill check
+npm install -g --prefix "$tmp_dir" \
+  "https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz"
+"$tmp_dir/bin/trek" --version
+"$tmp_dir/bin/trek" skill check
+test -f "$tmp_dir/lib/node_modules/@trek-cn/cli/scripts/trek-mcp.mjs"
 ```
 
 如有临时有效 Key，再执行只读生产冒烟：
