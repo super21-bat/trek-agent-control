@@ -2,9 +2,14 @@
 
 import {
   chmodSync,
+  cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
+  renameSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
@@ -14,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.1.2';
+const CLI_VERSION = '0.1.3';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -185,7 +190,7 @@ function print(value) {
 
 function redact(value) {
   if (!value) return null;
-  return value.length > 12 ? `${value.slice(0, 8)}...${value.slice(-4)}` : 'configured';
+  return 'configured';
 }
 
 function packageVersion() {
@@ -238,6 +243,71 @@ function validateSkillPackage() {
   return { ok: failures.length === 0, skillFile, failures };
 }
 
+function isTrekSkill(path) {
+  try {
+    return /^name:\s*trek-agent-control\s*$/m.test(readFileSync(join(path, 'SKILL.md'), 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
+function syncHermesSkill() {
+  const hermesRoot = join(homedir(), '.hermes');
+  if (!existsSync(hermesRoot)) {
+    return { detected: false, installed: false, reason: 'Hermes home not found' };
+  }
+
+  const skillsRoot = join(hermesRoot, 'skills');
+  const target = join(skillsRoot, 'trek-agent-control');
+  mkdirSync(skillsRoot, { recursive: true, mode: 0o700 });
+
+  let targetExists = false;
+  try {
+    lstatSync(target);
+    targetExists = true;
+  } catch {}
+  if (targetExists && !isTrekSkill(target)) {
+    throw new Error(`refusing to replace non-Trek Hermes Skill at ${target}`);
+  }
+
+  const suffix = `${process.pid}-${Date.now()}`;
+  const temporary = `${target}.tmp-${suffix}`;
+  const backup = `${target}.bak-${suffix}`;
+  try {
+    mkdirSync(temporary, { recursive: false, mode: 0o700 });
+    for (const entry of ['SKILL.md', 'references', 'assets']) {
+      const source = join(packageRoot, entry);
+      if (existsSync(source)) cpSync(source, join(temporary, entry), { recursive: true, dereference: true });
+    }
+    if (!isTrekSkill(temporary)) throw new Error('copied Hermes Skill failed integrity validation');
+    if (targetExists) renameSync(target, backup);
+    try {
+      renameSync(temporary, target);
+    } catch (error) {
+      if (targetExists && existsSync(backup)) renameSync(backup, target);
+      throw error;
+    }
+    if (targetExists) rmSync(backup, { recursive: true, force: true });
+  } catch (error) {
+    rmSync(temporary, { recursive: true, force: true });
+    throw error;
+  }
+
+  const resolvedSkillFile = realpathSync(join(target, 'SKILL.md'));
+  const trustedRoot = `${realpathSync(skillsRoot)}${process.platform === 'win32' ? '\\' : '/'}`;
+  if (!resolvedSkillFile.startsWith(trustedRoot)) {
+    throw new Error(`Hermes Skill resolved outside its trusted directory: ${resolvedSkillFile}`);
+  }
+  return {
+    detected: true,
+    installed: true,
+    type: 'copy',
+    path: target,
+    trustedPathVerified: true,
+    restartRequired: true,
+  };
+}
+
 function skillCommand(args) {
   const [action = 'show'] = args;
   const report = validateSkillPackage();
@@ -254,7 +324,15 @@ function skillCommand(args) {
   const result = spawnSync('npx', commandArgs, { stdio: 'inherit' });
   if (result.error) throw new Error(`cannot start npx: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`skill sync failed with exit code ${result.status}`);
-  return print({ ok: true, installed: true, global: globalInstall, source: packageRoot });
+  const hermes = globalInstall ? syncHermesSkill() : { detected: false, installed: false, reason: 'global sync not requested' };
+  return print({
+    ok: true,
+    installed: true,
+    global: globalInstall,
+    source: packageRoot,
+    hermes,
+    nextSteps: hermes.installed ? ['Restart the Hermes gateway or start a new Hermes session.', 'Run trek doctor.'] : ['Run trek doctor.'],
+  });
 }
 
 function updateCommand(args) {
@@ -397,7 +475,17 @@ async function main() {
 
     if (command === 'doctor') {
       const trips = await client.callTool('list_trips', { include_archived: false });
-      return print({ ok: true, stage: 'complete', checks, endpoint, protocolVersion: initialized?.protocolVersion, toolCount: tools.length, tripCount: trips.trips?.length ?? 0 });
+      return print({
+        ok: true,
+        stage: 'complete',
+        authentication: 'verified-live',
+        readback: 'list_trips',
+        checks,
+        endpoint,
+        protocolVersion: initialized?.protocolVersion,
+        toolCount: tools.length,
+        tripCount: trips.trips?.length ?? 0,
+      });
     }
     if (command === 'tools') {
       const filter = (args[0] || '').toLowerCase();

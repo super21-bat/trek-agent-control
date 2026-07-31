@@ -63,7 +63,18 @@ Codex, Claude, OpenClaw, Hermes and other terminal-capable agents follow the sam
 4. Otherwise allow the agent to execute `trek ...`.
 5. Run `doctor`; require `ok: true`, a protocol version, a positive tool count, and successful `list_trips` before giving write access.
 
-Do not assume a runtime-specific Skill path: `trek skill sync` delegates placement to the installed Skills runner. The CLI fallback is the compatibility baseline.
+`trek skill sync --global` delegates the common Agent locations to the installed
+Skills runner. When Hermes is detected, Trek additionally installs a real copy
+under `~/.hermes/skills/trek-agent-control`. A cross-directory symlink is not
+enough: Hermes resolves symlinks before enforcing its trusted Skill directory.
+Restart the Hermes gateway or start a new Hermes session after syncing.
+
+Hermes native remote MCP support is optional. Hermes installations that include
+the MCP extra may configure the Streamable HTTP endpoint directly; installations
+without it can use the Trek CLI fallback with the same capabilities. Trek must
+not install or modify Hermes' Python environment automatically. Follow the
+Hermes version's own installation instructions when native MCP is desired, and
+do not hard-code another user's virtual-environment path.
 
 ## Diagnostics
 

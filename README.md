@@ -64,6 +64,11 @@ MCP、CLI 或 `doctor`。
 - **支持终端但不支持远程 MCP**：安装零依赖 Node.js CLI。
 - **Codex / Claude / OpenClaw / Hermes**：使用同一个复制接入包；支持原生 MCP 时直接连接，否则使用 CLI。
 
+Hermes 用户执行 `trek skill sync --global` 后，CLI 会在 Hermes 的可信目录
+安装实体 Skill 副本；请重启 Hermes gateway 或开启新会话。Hermes 原生 MCP
+扩展不是必需项，未安装时直接使用 `trek` CLI 即可，不要让 Trek 安装脚本
+擅自修改 Hermes 的 Python 环境。
+
 仓库中不包含任何用户 Key、行程数据、小程序源码或服务端凭据。
 
 ## 快速开始
@@ -116,6 +121,8 @@ trek batch /absolute/path/actions.json --apply
 ```
 
 `batch` 默认只预览；高风险操作需要额外确认。生产诊断默认只读。
+`doctor` 会在线完成 MCP 初始化、工具发现和 `list_trips` 回读，因此也能识别
+已撤销或无效的 Key；输出只显示 `configured`，不会暴露 Key 的任何片段。
 
 ## 文档
 

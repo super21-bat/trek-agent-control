@@ -88,9 +88,9 @@ test -f "$tmp_dir/lib/node_modules/@trek-cn/cli/scripts/trek-mcp.mjs"
 如有临时有效 Key，再执行只读生产冒烟：
 
 ```bash
-trek config init --endpoint https://api.superd.fun/mcp --key '由用户单独提供'
+trek config init --url https://api.superd.fun/mcp --api-key '由用户单独提供'
 trek doctor
-trek tools call list_trips '{}'
+trek call list_trips '{"include_archived":false}'
 ```
 
 通过标准：
