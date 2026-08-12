@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.1.3';
+const CLI_VERSION = '0.2.1';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -308,6 +308,41 @@ function syncHermesSkill() {
   };
 }
 
+function syncWorkBuddySkill() {
+  const workBuddyRoot = join(homedir(), '.workbuddy');
+  if (!existsSync(workBuddyRoot)) {
+    return { detected: false, installed: false, reason: 'WorkBuddy home not found' };
+  }
+  const skillsRoot = join(workBuddyRoot, 'skills');
+  const target = join(skillsRoot, 'trek-agent-control');
+  mkdirSync(skillsRoot, { recursive: true, mode: 0o700 });
+  let targetExists = false;
+  try { lstatSync(target); targetExists = true; } catch {}
+  if (targetExists && !isTrekSkill(target)) throw new Error(`refusing to replace non-Trek WorkBuddy Skill at ${target}`);
+
+  const suffix = `${process.pid}-${Date.now()}`;
+  const temporary = `${target}.tmp-${suffix}`;
+  const backup = `${target}.bak-${suffix}`;
+  try {
+    mkdirSync(temporary, { recursive: false, mode: 0o700 });
+    for (const entry of ['SKILL.md', 'references', 'assets', 'agents']) {
+      const source = join(packageRoot, entry);
+      if (existsSync(source)) cpSync(source, join(temporary, entry), { recursive: true, dereference: true });
+    }
+    if (!isTrekSkill(temporary)) throw new Error('copied WorkBuddy Skill failed integrity validation');
+    if (targetExists) renameSync(target, backup);
+    try { renameSync(temporary, target); } catch (error) {
+      if (targetExists && existsSync(backup)) renameSync(backup, target);
+      throw error;
+    }
+    if (targetExists) rmSync(backup, { recursive: true, force: true });
+  } catch (error) {
+    rmSync(temporary, { recursive: true, force: true });
+    throw error;
+  }
+  return { detected: true, installed: true, type: 'copy', path: target, restartRequired: true };
+}
+
 function skillCommand(args) {
   const [action = 'show'] = args;
   const report = validateSkillPackage();
@@ -325,13 +360,19 @@ function skillCommand(args) {
   if (result.error) throw new Error(`cannot start npx: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`skill sync failed with exit code ${result.status}`);
   const hermes = globalInstall ? syncHermesSkill() : { detected: false, installed: false, reason: 'global sync not requested' };
+  const workbuddy = globalInstall ? syncWorkBuddySkill() : { detected: false, installed: false, reason: 'global sync not requested' };
   return print({
     ok: true,
     installed: true,
     global: globalInstall,
     source: packageRoot,
     hermes,
-    nextSteps: hermes.installed ? ['Restart the Hermes gateway or start a new Hermes session.', 'Run trek doctor.'] : ['Run trek doctor.'],
+    workbuddy,
+    nextSteps: [
+      ...(hermes.installed ? ['Restart the Hermes gateway or start a new Hermes session.'] : []),
+      ...(workbuddy.installed ? ['Start a new WorkBuddy task so the refreshed Skill is loaded.'] : []),
+      'Run trek doctor.',
+    ],
   });
 }
 
@@ -418,7 +459,9 @@ function help() {
     `  call <tool-name> '<json>' | @/absolute/args.json\n` +
     `  summary <trip-id>\n` +
     `  audit-plan <trip-id> <expected-assignments.json>\n` +
+    `  add-pending <trip-id> <title> [--place-name <name>] [--address <text>] [--reason <text>] [--lat <number>] [--lng <number>]\n` +
     `  upload-file <trip-id> <absolute-file> [--assignment <id>] [--reservation <id>] [--place <id>] [--description <text>]\n` +
+    `  set-cover <trip-id> <absolute-image> [--description <text>]\n` +
     `  rename-file <trip-id> <file-id> <display-filename>\n` +
     `  batch <actions.json> [--apply] [--confirm-high-risk]\n` +
     `  smoke --allow-write-smoke\n`);
@@ -533,6 +576,42 @@ async function main() {
       if (!ok) process.exitCode = 2;
       return;
     }
+    if (command === 'add-pending') {
+      if (!names.has('list_trip_proposals') || !names.has('create_trip_proposal')) {
+        throw new Error('add-pending requires list_trip_proposals and create_trip_proposal');
+      }
+      const tripId = positiveId(args[0], 'trip-id');
+      const title = args[1]?.trim();
+      if (!title || title.startsWith('--')) throw new Error('add-pending requires a candidate title');
+      const before = await client.callTool('list_trip_proposals', { tripId });
+      const duplicate = (before?.proposals || []).find((item) =>
+        item.status === 'open' && normalizePlanName(item.title) === normalizePlanName(title),
+      );
+      if (duplicate) return print({ ok: true, tripId, proposalId: duplicate.id, status: duplicate.status, verified: true, duplicate: true });
+      const latitudeValue = optionValue(args, '--lat');
+      const longitudeValue = optionValue(args, '--lng');
+      const latitude = latitudeValue === undefined ? undefined : Number(latitudeValue);
+      const longitude = longitudeValue === undefined ? undefined : Number(longitudeValue);
+      if (latitudeValue !== undefined && !Number.isFinite(latitude)) throw new Error('--lat must be a number');
+      if (longitudeValue !== undefined && !Number.isFinite(longitude)) throw new Error('--lng must be a number');
+      const created = await client.callTool('create_trip_proposal', {
+        tripId,
+        title,
+        placeName: optionValue(args, '--place-name'),
+        placeAddress: optionValue(args, '--address'),
+        reason: optionValue(args, '--reason'),
+        latitude,
+        longitude,
+      });
+      const proposalId = created?.proposal?.id;
+      if (!proposalId) throw new Error('create_trip_proposal did not return proposal.id');
+      const after = await client.callTool('list_trip_proposals', { tripId });
+      const actual = (after?.proposals || []).find((item) => item.id === proposalId);
+      if (!actual || actual.status !== 'open' || normalizePlanName(actual.title) !== normalizePlanName(title)) {
+        throw new Error('proposal readback mismatch: pending place was not persisted');
+      }
+      return print({ ok: true, tripId, proposalId, status: actual.status, verified: true, duplicate: false });
+    }
     if (command === 'upload-file') {
       if (!names.has('upload_trip_file')) throw new Error('upload_trip_file is unavailable on this server');
       const tripId = positiveId(args[0], 'trip-id');
@@ -553,6 +632,33 @@ async function main() {
         reservation_id: positiveId(optionValue(args, '--reservation'), 'reservation'),
         place_id: positiveId(optionValue(args, '--place'), 'place'),
       }));
+    }
+    if (command === 'set-cover') {
+      if (!names.has('upload_trip_file') || !names.has('update_trip') || !names.has('get_trip_summary')) {
+        throw new Error('set-cover requires upload_trip_file, update_trip, and get_trip_summary');
+      }
+      const tripId = positiveId(args[0], 'trip-id');
+      const filePath = args[1];
+      if (!filePath || filePath.startsWith('--')) throw new Error('set-cover requires an absolute local image path');
+      const bytes = requireBinaryFile(filePath);
+      if (!bytes.length || bytes.length > 10 * 1024 * 1024) throw new Error('cover image must be between 1 byte and 10 MB');
+      const extension = globalThis.__extname(filePath);
+      const mimeType = attachmentMimeTypes.get(extension);
+      if (!mimeType?.startsWith('image/')) throw new Error(`unsupported cover image extension: ${extension || '(none)'}`);
+      const uploaded = await client.callTool('upload_trip_file', {
+        tripId,
+        filename: globalThis.__basename(filePath),
+        mime_type: mimeType,
+        content_base64: bytes.toString('base64'),
+        description: optionValue(args, '--description') || '行程封面',
+      });
+      const file = uploaded?.file;
+      if (!file?.id || !file?.url) throw new Error('upload_trip_file did not return file.id and file.url');
+      await client.callTool('update_trip', { tripId, cover_image: file.url });
+      const summary = await client.callTool('get_trip_summary', { tripId });
+      const actual = summary?.trip?.cover_image || null;
+      if (actual !== file.url) throw new Error('cover readback mismatch: update was not persisted');
+      return print({ ok: true, tripId, fileId: file.id, coverImage: actual, verified: true });
     }
     if (command === 'rename-file') {
       if (!names.has('rename_trip_file')) throw new Error('rename_trip_file is unavailable on this server');

@@ -63,11 +63,13 @@ Codex, Claude, OpenClaw, Hermes and other terminal-capable agents follow the sam
 4. Otherwise allow the agent to execute `trek ...`.
 5. Run `doctor`; require `ok: true`, a protocol version, a positive tool count, and successful `list_trips` before giving write access.
 
-`trek skill sync --global` delegates the common Agent locations to the installed
-Skills runner. When Hermes is detected, Trek additionally installs a real copy
-under `~/.hermes/skills/trek-agent-control`. A cross-directory symlink is not
-enough: Hermes resolves symlinks before enforcing its trusted Skill directory.
-Restart the Hermes gateway or start a new Hermes session after syncing.
+`trek skill sync --global` delegates common Agent locations to the installed
+Skills runner. Trek also installs real copies into detected WorkBuddy
+`~/.workbuddy/skills/trek-agent-control` and Hermes
+`~/.hermes/skills/trek-agent-control` directories. Start a new WorkBuddy task or
+restart the Hermes gateway after syncing. A cross-directory symlink is not
+enough for Hermes: it resolves symlinks before enforcing its trusted Skill
+directory.
 
 Hermes native remote MCP support is optional. Hermes installations that include
 the MCP extra may configure the Streamable HTTP endpoint directly; installations

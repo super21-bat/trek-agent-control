@@ -47,6 +47,17 @@ Use proposals before formal itinerary writes when a group has not decided:
 
 Use polls for broad group choices and proposals for candidate places that may become scheduled items.
 
+### Add one pending place
+
+This is a three-call micro-flow, not a full itinerary-planning task:
+
+1. `list_trip_proposals({ tripId })` and reject a normalized duplicate.
+2. `create_trip_proposal({ tripId, title, placeName?, placeAddress?, latitude?, longitude?, reason? })`.
+3. `list_trip_proposals({ tripId })` and require an `open` proposal with the same title/returned ID.
+
+Do not use `create_place`: a saved place is not the mini program's “待决定” item.
+Do not report success from the create response alone.
+
 ## Change an existing trip safely
 
 Create a diff with:

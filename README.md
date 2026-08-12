@@ -116,6 +116,8 @@ trek tools place
 trek summary 3
 trek audit-plan 3 /absolute/path/expected-assignments.json
 trek upload-file 3 /absolute/path/ticket.pdf --assignment 42
+trek set-cover 3 /absolute/path/cover.jpg
+trek add-pending 3 '西湖游船' --reason '同行者表态后再排日程'
 trek batch /absolute/path/actions.json
 trek batch /absolute/path/actions.json --apply
 ```

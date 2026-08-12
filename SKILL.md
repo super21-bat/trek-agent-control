@@ -35,6 +35,24 @@ trek doctor
 
 The mini program presents this to ordinary users as two steps: copy once, then send the copied bundle to WorkBuddy. WorkBuddy should complete installation, configuration, Skill sync, and `doctor` without asking the user to run commands manually. Treat the whole bundle as a secret. If native remote MCP is unavailable or unreliable, execute all operations through `trek`; it calls the same MCP endpoint. Read [references/configuration.md](references/configuration.md) for runtime details.
 
+## Fast paths for common user requests
+
+Do not load the large-planning workflow for these small writes. Use the exact
+recipe, then stop:
+
+- “加到待定/候选地点”：resolve the trip with `list_trips`, then run
+  `trek add-pending <trip-id> <title>` when using the CLI. With native MCP, check
+  duplicates with `list_trip_proposals`, call `create_trip_proposal` (not
+  `create_place` and not a day note), then read `list_trip_proposals` again.
+- “设置行程封面”：when using the CLI, run `trek set-cover <trip-id>
+  <absolute-image>`; with native MCP, call `upload_trip_file`, copy the returned
+  `file.url` into `update_trip.cover_image`, then call `get_trip_summary` and
+  require exact equality. Upload success alone is failure, not a visible cover.
+
+For either fast path, if readback fails, report “未同步” and the exact failed
+stage. Never continue into unrelated planning or claim the mini program will
+eventually refresh.
+
 ## Mandatory workflow
 
 1. Run `doctor` or native `tools/list`. Stop on authentication, network, or missing-tool failure.
@@ -61,14 +79,16 @@ trek tools place
 trek call list_trips '{"include_archived":false}'
 trek summary 3
 trek audit-plan 3 /absolute/path/expected-assignments.json
+trek add-pending 3 '西湖游船' --reason '同行者表态后再排日程'
 trek upload-file 3 /absolute/path/ticket.pdf --assignment 42 --description '景区电子票'
+trek set-cover 3 /absolute/path/cover.jpg --description '行程封面'
 trek rename-file 3 19 '金门大桥门票.pdf'
 trek batch /absolute/path/actions.json
 trek batch /absolute/path/actions.json --apply
 trek smoke --allow-write-smoke
 ```
 
-`doctor` reports local configuration, endpoint, credential presence, Skill integrity, authentication, live tool count, and trip readback. Failures include a category, hint, and next command; retain that structured output when diagnosing. `update --check` compares CLI versions; `update` upgrades the CLI and resynchronizes the Skill. `audit-plan` compares an expected JSON date-to-place mapping with live `days[].assignments` and exits non-zero on missing items. `upload-file` reads a local attachment without printing its base64 and supports files up to 10 MB. `rename-file` changes only the display name and keeps the extension. `batch` is dry-run unless `--apply` is present. Applied actions always expose `ok`, `resourceType`, `resource`, `warnings`, and the original `result`; execution stops on the first failed action. It refuses high-risk tool names unless `--confirm-high-risk` is also present. `smoke` creates temporary data, exercises the proposal lifecycle, deletes it, and closes the MCP session.
+`doctor` reports local configuration, endpoint, credential presence, Skill integrity, authentication, live tool count, and trip readback. Failures include a category, hint, and next command; retain that structured output when diagnosing. `update --check` compares CLI versions; `update` upgrades the CLI and resynchronizes the Skill. `audit-plan` compares an expected JSON date-to-place mapping with live `days[].assignments` and exits non-zero on missing items. `add-pending` creates or reuses a candidate and verifies the open proposal by ID. `upload-file` reads a local attachment without printing its base64 and supports files up to 10 MB. `set-cover` uploads, binds, and verifies a visible trip cover as one command. `rename-file` changes only the display name and keeps the extension. `batch` is dry-run unless `--apply` is present. Applied actions always expose `ok`, `resourceType`, `resource`, `warnings`, and the original `result`; execution stops on the first failed action. It refuses high-risk tool names unless `--confirm-high-risk` is also present. `smoke` creates temporary data, exercises the proposal lifecycle, deletes it, and closes the MCP session.
 
 ## Safety invariants
 

@@ -28,7 +28,7 @@ function run(args, env = {}) {
 test('prints the packaged version without credentials', () => {
   const result = run(['--version']);
   assert.equal(result.status, 0);
-  assert.equal(result.stdout.trim(), '0.2.0');
+  assert.equal(result.stdout.trim(), '0.2.1');
 });
 
 test('initializes and redacts a local config', () => {
@@ -71,6 +71,30 @@ test('installs a real Hermes Skill copy inside the trusted directory', () => {
   assert.equal(report.hermes.trustedPathVerified, true);
   assert.equal(lstatSync(target).isSymbolicLink(), false);
   assert.ok(realpathSync(join(target, 'SKILL.md')).startsWith(`${realpathSync(hermesSkills)}/`));
+  assert.equal(readFileSync(join(target, 'SKILL.md'), 'utf8'), readFileSync(resolve('SKILL.md'), 'utf8'));
+});
+
+test('installs a real WorkBuddy Skill copy instead of leaving a stale imported version', () => {
+  const home = mkdtempSync(join(tmpdir(), 'trek-workbuddy-home-'));
+  const bin = join(home, 'bin');
+  const workBuddySkills = join(home, '.workbuddy', 'skills');
+  const target = join(workBuddySkills, 'trek-agent-control');
+  mkdirSync(bin, { recursive: true });
+  mkdirSync(target, { recursive: true });
+  writeFileSync(join(target, 'SKILL.md'), '---\nname: trek-agent-control\n---\n\nstale\n');
+  const fakeNpx = join(bin, 'npx');
+  writeFileSync(fakeNpx, '#!/bin/sh\nexit 0\n');
+  chmodSync(fakeNpx, 0o755);
+
+  const synced = run(['skill', 'sync', '--global'], {
+    HOME: home,
+    PATH: `${bin}:${process.env.PATH}`,
+    TREK_CONFIG: join(home, '.trek', 'config.json'),
+  });
+  assert.equal(synced.status, 0, synced.stderr);
+  const report = JSON.parse(synced.stdout);
+  assert.equal(report.workbuddy.type, 'copy');
+  assert.equal(report.workbuddy.restartRequired, true);
   assert.equal(readFileSync(join(target, 'SKILL.md'), 'utf8'), readFileSync(resolve('SKILL.md'), 'utf8'));
 });
 
