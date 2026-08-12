@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.2.1';
+const CLI_VERSION = '0.2.2';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -577,23 +577,33 @@ async function main() {
       return;
     }
     if (command === 'add-pending') {
-      if (!names.has('list_trip_proposals') || !names.has('create_trip_proposal')) {
-        throw new Error('add-pending requires list_trip_proposals and create_trip_proposal');
-      }
       const tripId = positiveId(args[0], 'trip-id');
       const title = args[1]?.trim();
       if (!title || title.startsWith('--')) throw new Error('add-pending requires a candidate title');
-      const before = await client.callTool('list_trip_proposals', { tripId });
-      const duplicate = (before?.proposals || []).find((item) =>
-        item.status === 'open' && normalizePlanName(item.title) === normalizePlanName(title),
-      );
-      if (duplicate) return print({ ok: true, tripId, proposalId: duplicate.id, status: duplicate.status, verified: true, duplicate: true });
       const latitudeValue = optionValue(args, '--lat');
       const longitudeValue = optionValue(args, '--lng');
       const latitude = latitudeValue === undefined ? undefined : Number(latitudeValue);
       const longitude = longitudeValue === undefined ? undefined : Number(longitudeValue);
       if (latitudeValue !== undefined && !Number.isFinite(latitude)) throw new Error('--lat must be a number');
       if (longitudeValue !== undefined && !Number.isFinite(longitude)) throw new Error('--lng must be a number');
+      if (names.has('apply_trip_change')) {
+        return print(await client.callTool('apply_trip_change', {
+          action: 'add_pending', tripId, title,
+          placeName: optionValue(args, '--place-name'),
+          placeAddress: optionValue(args, '--address'),
+          reason: optionValue(args, '--reason'),
+          latitude,
+          longitude,
+        }));
+      }
+      if (!names.has('list_trip_proposals') || !names.has('create_trip_proposal')) {
+        throw new Error('add-pending requires list_trip_proposals and create_trip_proposal');
+      }
+      const before = await client.callTool('list_trip_proposals', { tripId });
+      const duplicate = (before?.proposals || []).find((item) =>
+        item.status === 'open' && normalizePlanName(item.title) === normalizePlanName(title),
+      );
+      if (duplicate) return print({ ok: true, tripId, proposalId: duplicate.id, status: duplicate.status, verified: true, duplicate: true });
       const created = await client.callTool('create_trip_proposal', {
         tripId,
         title,
@@ -634,9 +644,6 @@ async function main() {
       }));
     }
     if (command === 'set-cover') {
-      if (!names.has('upload_trip_file') || !names.has('update_trip') || !names.has('get_trip_summary')) {
-        throw new Error('set-cover requires upload_trip_file, update_trip, and get_trip_summary');
-      }
       const tripId = positiveId(args[0], 'trip-id');
       const filePath = args[1];
       if (!filePath || filePath.startsWith('--')) throw new Error('set-cover requires an absolute local image path');
@@ -645,6 +652,18 @@ async function main() {
       const extension = globalThis.__extname(filePath);
       const mimeType = attachmentMimeTypes.get(extension);
       if (!mimeType?.startsWith('image/')) throw new Error(`unsupported cover image extension: ${extension || '(none)'}`);
+      if (names.has('apply_trip_change')) {
+        return print(await client.callTool('apply_trip_change', {
+          action: 'set_cover', tripId,
+          filename: globalThis.__basename(filePath),
+          mime_type: mimeType,
+          content_base64: bytes.toString('base64'),
+          description: optionValue(args, '--description') || '行程封面',
+        }));
+      }
+      if (!names.has('upload_trip_file') || !names.has('update_trip') || !names.has('get_trip_summary')) {
+        throw new Error('set-cover requires apply_trip_change or upload_trip_file + update_trip + get_trip_summary');
+      }
       const uploaded = await client.callTool('upload_trip_file', {
         tripId,
         filename: globalThis.__basename(filePath),

@@ -41,13 +41,13 @@ Do not load the large-planning workflow for these small writes. Use the exact
 recipe, then stop:
 
 - “加到待定/候选地点”：resolve the trip with `list_trips`, then run
-  `trek add-pending <trip-id> <title>` when using the CLI. With native MCP, check
-  duplicates with `list_trip_proposals`, call `create_trip_proposal` (not
-  `create_place` and not a day note), then read `list_trip_proposals` again.
-- “设置行程封面”：when using the CLI, run `trek set-cover <trip-id>
-  <absolute-image>`; with native MCP, call `upload_trip_file`, copy the returned
-  `file.url` into `update_trip.cover_image`, then call `get_trip_summary` and
-  require exact equality. Upload success alone is failure, not a visible cover.
+  `trek add-pending <trip-id> <title>` or call native MCP `apply_trip_change`
+  with `action: "add_pending"`. The server owns duplicate detection and returns
+  a persisted readback receipt.
+- “设置行程封面”：run `trek set-cover <trip-id>
+  <absolute-image>` or call native MCP `apply_trip_change` with `action:
+  "set_cover"`. The server owns upload, binding and readback as one semantic
+  operation; do not compose primitive upload/update calls when this tool exists.
 
 For either fast path, if readback fails, report “未同步” and the exact failed
 stage. Never continue into unrelated planning or claim the mini program will
