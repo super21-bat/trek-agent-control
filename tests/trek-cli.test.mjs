@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const cli = resolve('scripts/trek-mcp.mjs');
+const packageVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf8')).version;
 
 function run(args, env = {}) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -28,7 +29,7 @@ function run(args, env = {}) {
 test('prints the packaged version without credentials', () => {
   const result = run(['--version']);
   assert.equal(result.status, 0);
-  assert.equal(result.stdout.trim(), '0.2.2');
+  assert.equal(result.stdout.trim(), packageVersion);
 });
 
 test('initializes and redacts a local config', () => {
