@@ -69,9 +69,10 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 
 ## Packing checklist fields
 
-- Prefer the mini program's four user-facing packing locations so human and Agent-created items fold into the same sections: `随身必带`, `衣物`, `日用健康`, `其他`.
-- Do not ask the user for a category when the item name makes it obvious. Infer it: identity documents, phone accessories, wallet and keys -> `随身必带`; clothing and footwear -> `衣物`; toiletries, sun protection, medicine, umbrella and tissues -> `日用健康`; scene-specific items -> `其他`.
-- Legacy English and Chinese categories remain readable, and custom categories are still allowed. Do not create a category named after a place such as “为酒店准备”; choose the user's real packing category instead.
+- Prefer the mini program's three low-effort built-in packing locations: `随身必带`, `衣物`, and `日用健康`. “自定义” is an action, not a category name: when the user needs a special grouping, write the actual reusable category name.
+- Do not ask the user for a category when the item name makes it obvious. Infer it: identity documents, phone accessories, wallet and keys -> `随身必带`; clothing and footwear -> `衣物`; toiletries, sun protection, medicine, umbrella and tissues -> `日用健康`. If there is no stronger match and the user did not request a special grouping, omit `category` and let the service use the safe `随身必带` default.
+- For a real trip-specific need, pass a concise custom category such as `露营装备`, `摄影器材`, or `儿童用品`. Once one item uses that category, the mini program offers it directly for later items in the same trip and groups all same-category items together. Reuse the exact existing category spelling from readback instead of creating near-duplicates.
+- Legacy English/Chinese categories and historical `其他` remain readable. Do not create a category named after a place such as “为酒店准备”; use a reusable packing concept instead.
 - Always send `quantity` when the user needs more than one item. Valid values are integers from 1 to 999.
 - After `create_packing_item` or `update_packing_item`, read back the item and verify `name`, `category`, and `quantity`; do not report a successful packing update from the write response alone.
 - Reuse or update an existing normalized name instead of creating a duplicate, unless the same item genuinely belongs to different people or bags.

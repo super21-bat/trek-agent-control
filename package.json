@@ -1,6 +1,6 @@
 {
   "name": "@trek-cn/cli",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Trek MCP CLI and Agent Skill",
   "repository": {
     "type": "git",
