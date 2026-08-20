@@ -67,6 +67,15 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 - The mini program's "预订" tab is the single editable reservation inventory. Legacy `day_assignments.reservation_*` fields are read-only compatibility data; do not write new booking data there.
 - Use fixed budget category keys such as `accommodation`, `food`, `transport`, `activities`, `shopping`, or `other`. Record `expense_date`, currency and payers when known.
 
+## Packing checklist fields
+
+- Prefer the mini program's four user-facing packing locations so human and Agent-created items fold into the same sections: `随身必带`, `衣物`, `日用健康`, `其他`.
+- Do not ask the user for a category when the item name makes it obvious. Infer it: identity documents, phone accessories, wallet and keys -> `随身必带`; clothing and footwear -> `衣物`; toiletries, sun protection, medicine, umbrella and tissues -> `日用健康`; scene-specific items -> `其他`.
+- Legacy English and Chinese categories remain readable, and custom categories are still allowed. Do not create a category named after a place such as “为酒店准备”; choose the user's real packing category instead.
+- Always send `quantity` when the user needs more than one item. Valid values are integers from 1 to 999.
+- After `create_packing_item` or `update_packing_item`, read back the item and verify `name`, `category`, and `quantity`; do not report a successful packing update from the write response alone.
+- Reuse or update an existing normalized name instead of creating a duplicate, unless the same item genuinely belongs to different people or bags.
+
 ## Batch file format
 
 `scripts/trek-mcp.mjs batch` accepts a JSON array:
