@@ -41,9 +41,14 @@ Do not load the large-planning workflow for these small writes. Use the exact
 recipe, then stop:
 
 - “加到待定/候选地点”：resolve the trip with `list_trips`, then run
-  `trek add-pending <trip-id> <title>` or call native MCP `apply_trip_change`
-  with `action: "add_pending"`. The server owns duplicate detection and returns
-  a persisted readback receipt.
+  `trek add-pending <trip-id> <title> [--place-id <saved-place-id>]` or call
+  native MCP `add_pending_place`. If the place already exists in 收藏, pass its
+  `placeId`; the server links/reuses that place instead of creating a duplicate.
+  For a newly researched candidate, include a short stable `description` and a
+  representative `imageUrl` when available; put the trip-specific recommendation
+  in `reason`. A name plus address alone is not enough context for group voting.
+  `apply_trip_change` with `action: "add_pending"` remains a compatible fallback.
+  Never use `create_place` for 待选/候选/待决定.
 - “设置行程封面”：run `trek set-cover <trip-id>
   <absolute-image>` or call native MCP `apply_trip_change` with `action:
   "set_cover"`. The server owns upload, binding and readback as one semantic

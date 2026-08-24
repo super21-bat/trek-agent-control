@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.2.2';
+const CLI_VERSION = '0.2.6';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -459,7 +459,7 @@ function help() {
     `  call <tool-name> '<json>' | @/absolute/args.json\n` +
     `  summary <trip-id>\n` +
     `  audit-plan <trip-id> <expected-assignments.json>\n` +
-    `  add-pending <trip-id> <title> [--place-name <name>] [--address <text>] [--reason <text>] [--lat <number>] [--lng <number>]\n` +
+    `  add-pending <trip-id> <title> [--place-id <id>] [--place-name <name>] [--address <text>] [--description <text>] [--image-url <url>] [--website <url>] [--phone <text>] [--reason <text>] [--lat <number>] [--lng <number>]\n` +
     `  upload-file <trip-id> <absolute-file> [--assignment <id>] [--reservation <id>] [--place <id>] [--description <text>]\n` +
     `  set-cover <trip-id> <absolute-image> [--description <text>]\n` +
     `  rename-file <trip-id> <file-id> <display-filename>\n` +
@@ -584,13 +584,35 @@ async function main() {
       const longitudeValue = optionValue(args, '--lng');
       const latitude = latitudeValue === undefined ? undefined : Number(latitudeValue);
       const longitude = longitudeValue === undefined ? undefined : Number(longitudeValue);
+      const placeIdValue = optionValue(args, '--place-id');
+      const placeId = placeIdValue === undefined ? undefined : positiveId(placeIdValue, 'place-id');
       if (latitudeValue !== undefined && !Number.isFinite(latitude)) throw new Error('--lat must be a number');
       if (longitudeValue !== undefined && !Number.isFinite(longitude)) throw new Error('--lng must be a number');
+      if (names.has('add_pending_place')) {
+        return print(await client.callTool('add_pending_place', {
+          tripId, placeId, title,
+          placeName: optionValue(args, '--place-name'),
+          placeAddress: optionValue(args, '--address'),
+          description: optionValue(args, '--description'),
+          placeNotes: optionValue(args, '--place-notes'),
+          imageUrl: optionValue(args, '--image-url'),
+          website: optionValue(args, '--website'),
+          phone: optionValue(args, '--phone'),
+          reason: optionValue(args, '--reason'),
+          latitude,
+          longitude,
+        }));
+      }
       if (names.has('apply_trip_change')) {
         return print(await client.callTool('apply_trip_change', {
           action: 'add_pending', tripId, title,
           placeName: optionValue(args, '--place-name'),
           placeAddress: optionValue(args, '--address'),
+          placeDescription: optionValue(args, '--description'),
+          placeNotes: optionValue(args, '--place-notes'),
+          imageUrl: optionValue(args, '--image-url'),
+          website: optionValue(args, '--website'),
+          phone: optionValue(args, '--phone'),
           reason: optionValue(args, '--reason'),
           latitude,
           longitude,
@@ -609,6 +631,11 @@ async function main() {
         title,
         placeName: optionValue(args, '--place-name'),
         placeAddress: optionValue(args, '--address'),
+        description: optionValue(args, '--description'),
+        placeNotes: optionValue(args, '--place-notes'),
+        imageUrl: optionValue(args, '--image-url'),
+        website: optionValue(args, '--website'),
+        phone: optionValue(args, '--phone'),
         reason: optionValue(args, '--reason'),
         latitude,
         longitude,

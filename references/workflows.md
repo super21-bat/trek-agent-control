@@ -49,14 +49,20 @@ Use polls for broad group choices and proposals for candidate places that may be
 
 ### Add one pending place
 
-This is a three-call micro-flow, not a full itinerary-planning task:
+Prefer the semantic tool; do not assemble this from primitive writes:
 
-1. `list_trip_proposals({ tripId })` and reject a normalized duplicate.
-2. `create_trip_proposal({ tripId, title, placeName?, placeAddress?, latitude?, longitude?, reason? })`.
-3. `list_trip_proposals({ tripId })` and require an `open` proposal with the same title/returned ID.
+1. If the place is already in 收藏, obtain its ID from `list_places`.
+2. Call `add_pending_place({ tripId, placeId, title, ... })`; `placeId` is preferred
+   for an existing saved place and prevents duplicate data.
+   For a new candidate, pass `description`, `imageUrl`, `website`, `phone` and
+   `placeNotes` when verified. Keep `reason` short and specific to this trip.
+3. Require `persisted: true`, `destination: "pending"`, and an `open` proposal
+   in the returned readback.
+4. To remove it from active discussion but keep it saved, call
+   `move_pending_place_to_saved({ tripId, proposalId })` after user confirmation.
 
 Do not use `create_place`: a saved place is not the mini program's “待决定” item.
-Do not report success from the create response alone.
+Do not report success without the semantic tool's persisted readback.
 
 ## Change an existing trip safely
 

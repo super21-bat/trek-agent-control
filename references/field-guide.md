@@ -34,6 +34,18 @@ The MCP tools do not promise a universal idempotency token. Before creating, com
 
 Reuse/update a match instead of creating a duplicate.
 
+## Saved and pending place visibility
+
+- 收藏 and 待决定 share the same place facts: name, address, description, notes,
+  image, website and phone. Moving between the two states must preserve them.
+- For a researched candidate, `description` answers “what is this place”; `reason`
+  answers “why consider it for this trip”. Do not put both meanings into one field.
+- Include a representative image only when its source is usable and stable. Never
+  fabricate a photo URL. A candidate without verified media may omit `imageUrl`,
+  but should still have a concise description whenever facts are available.
+- Verify rich candidate fields with `list_trip_proposals`; verify 收藏 fields with
+  `list_places`. Do not report synchronization if the description was dropped.
+
 ## Itinerary detail and ticket fields
 
 The mini program opens an itinerary detail sheet when the user taps a day assignment. To make agent-written plans useful there:
