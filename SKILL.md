@@ -66,7 +66,7 @@ eventually refresh.
 4. Build a dated plan and an `expectedAssignmentsByDate` checklist containing every POI/activity that must appear in the mini program. Use exact local dates and times. Do not invent reservations, confirmation numbers, phone numbers, opening hours, prices, or addresses.
 5. Show the user a compact change preview before destructive, bulk, financial, membership, proposal-decision, or rescheduling writes.
 6. Write in small batches. Reuse existing entities and detect duplicates by normalized name/date before creating.
-7. Every planned location/activity must be a Place plus Assignment. Use `create_and_assign_place` for a new POI and `assign_place_to_day` for an existing one. Day notes are supporting prose and must never replace assignments.
+7. Every real location visit must be a Place plus Assignment. Use `create_and_assign_place` for a new POI and `assign_place_to_day` for an existing one. Location-free actions (wake up, bring tickets, meet a friend) can be timed day notes: visible in the day-notes section in mini program 0.3.17+, but not map stops. Never fabricate a POI just to make a note visible; older clients must upgrade.
 8. Model accommodation separately. `create_place_accommodation`/`create_accommodation` create a lodging date range but no visible day assignment. If a hotel or check-in is in the daily plan, also assign its place to that day.
 9. Populate only meaningful fields, but use the complete model when relevant: trip dates/description, days, places and coordinates, assignment start/end/duration/transport/notes, reservations, accommodations, costs, packing, todos, collaboration notes, proposals and members.
 10. Read back with `get_trip_summary` plus the relevant `list_*` tool. Compare `expectedAssignmentsByDate` to actual `days[].assignments` by date and normalized place name/ID, not only counts. A planned day must not have zero assignments; explicitly document intentional rest/location-free travel days.
@@ -116,3 +116,10 @@ trek smoke --allow-write-smoke
 - Unknown fields/tools: call `tools/list`; never guess a schema from an older document.
 
 When native MCP and the bundled client disagree, trust a fresh `tools/list` response and production readback.
+
+## Daily notes and reminders (mini program 0.3.17+)
+
+- Keep day titles short (about 25 characters). Use `update_day.daily_brief` for a user-authored weather/clothing/tickets/packing reminder, up to 500 characters; empty or null restores date-specific weather. `trek set-day-brief <trip-id> <day-id> @brief.txt` writes and reads back.
+- `create_day_note` stores a timed action in the visible day-notes section, without adding a map stop. These notes were invisible in 0.3.16 and older.
+- `trek day-view <trip-id> <day-id>` / `preview_day_view` returns the content contract and minimum client version, not a screenshot or proof the user installed that version. Compare notes using `trek audit-notes <trip-id> expected-notes.json`; `audit-plan` checks assignments only.
+- Use the current authorized tool schema. With semantic profile, discover these advanced tools and reconnect using full profile if needed. For exact fields and boundaries read [references/field-guide.md](references/field-guide.md).

@@ -13,13 +13,15 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { auditDayNotes, validateExpectedNotes } from './day-audit.mjs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { spawnPackageManager } from './package-manager.mjs';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.2.6';
+const CLI_VERSION = '0.3.0';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -73,8 +75,11 @@ function parsePayload(text) {
 
 function parseJsonArg(value) {
   if (!value) return {};
-  if (value.startsWith('@')) return JSON.parse(requireFile(value.slice(1)));
-  return JSON.parse(value);
+  if (value.startsWith('@')) {
+    const contents = requireFile(value.slice(1));
+    try { return JSON.parse(contents.replace(/^\uFEFF/, '')); } catch { throw new Error('invalid_json: argument file must contain valid JSON'); }
+  }
+  try { return JSON.parse(value); } catch { throw new Error('invalid_json: use trek call TOOL @args.json with a UTF-8 JSON file'); }
 }
 
 function requireFile(path) {
@@ -119,6 +124,11 @@ class TrekMcpClient {
         });
         if (!this.sessionId) this.sessionId = response.headers.get('mcp-session-id') || '';
         const text = await response.text();
+        // A gateway can fail after a tool has committed its write. JSON-RPC IDs
+        // do not make tools/call idempotent; only explicit rate rejection is replayed.
+        if (method === 'tools/call' && transientStatuses.has(response.status) && response.status !== 429) {
+          throw new Error(`${method}: HTTP ${response.status}; outcome unknown. Read back the trip before retrying; tool call was not replayed.`);
+        }
         if (transientStatuses.has(response.status) && attempt < maxAttempts - 1) {
           const retryAfter = Number.parseFloat(response.headers.get('retry-after') || '');
           const delay = Number.isFinite(retryAfter) && retryAfter > 0
@@ -136,6 +146,9 @@ class TrekMcpClient {
       } catch (error) {
         lastError = error;
         const retryable = error?.name === 'TimeoutError' || error?.name === 'TypeError';
+        if (retryable && method === 'tools/call') {
+          throw new Error(`${method}: network failure; outcome unknown. Read back the trip before retrying; tool call was not replayed.`);
+        }
         if (!retryable || attempt === maxAttempts - 1) throw error;
         const delay = Math.min(10_000, 500 * (2 ** attempt)) + Math.floor(Math.random() * 250);
         process.stderr.write(`[trek-mcp] ${method} network failure; retry in ${delay}ms\n`);
@@ -356,7 +369,7 @@ function skillCommand(args) {
   if (!report.ok) throw new Error(`skill package validation failed: ${report.failures.join('; ')}`);
   const globalInstall = args.includes('--global');
   const commandArgs = ['-y', 'skills', 'add', packageRoot, ...(globalInstall ? ['-g'] : []), '-y'];
-  const result = spawnSync('npx', commandArgs, { stdio: 'inherit' });
+  const result = spawnPackageManager('npx', commandArgs, { stdio: 'inherit' });
   if (result.error) throw new Error(`cannot start npx: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`skill sync failed with exit code ${result.status}`);
   const hermes = globalInstall ? syncHermesSkill() : { detected: false, installed: false, reason: 'global sync not requested' };
@@ -378,7 +391,7 @@ function skillCommand(args) {
 
 function updateCommand(args) {
   const current = packageVersion();
-  const lookup = spawnSync('npm', ['view', NPM_PACKAGE, 'version', `--registry=${NPM_REGISTRY}`], { encoding: 'utf8' });
+  const lookup = spawnPackageManager('npm', ['view', NPM_PACKAGE, 'version', `--registry=${NPM_REGISTRY}`], { encoding: 'utf8' });
   if (lookup.error) throw new Error(`cannot start npm: ${lookup.error.message}`);
   if (lookup.status !== 0 && args.includes('--check')) {
     return print({
@@ -398,10 +411,10 @@ function updateCommand(args) {
 }
 
 function installUpdate(current, installSpec, source, latest = null) {
-  const installed = spawnSync('npm', ['install', '-g', installSpec], { stdio: 'inherit' });
+  const installed = spawnPackageManager('npm', ['install', '-g', installSpec], { stdio: 'inherit' });
   if (installed.error) throw new Error(`cannot start npm install: ${installed.error.message}`);
   if (installed.status !== 0) throw new Error(`CLI update failed with exit code ${installed.status}`);
-  const synced = spawnSync('trek', ['skill', 'sync', '--global'], { stdio: 'inherit' });
+  const synced = spawnSync(process.execPath, [fileURLToPath(import.meta.url), 'skill', 'sync', '--global'], { stdio: 'inherit' });
   if (synced.error) throw new Error(`CLI updated, but Skill sync could not start: ${synced.error.message}`);
   if (synced.status !== 0) throw new Error(`CLI updated, but Skill sync failed with exit code ${synced.status}`);
   return print({ ok: true, previous: current, current: latest, source, updated: true, skillSynced: true, nextCommand: 'trek doctor' });
@@ -426,6 +439,8 @@ function localDoctorChecks() {
 
 function diagnostic(error) {
   const message = String(error?.message || error);
+  if (/invalid_json|invalid_arguments|unknown_command/.test(message)) return { category: message.split(':')[0], hint: message, nextCommand: 'trek help' };
+  if (/outcome unknown/.test(message)) return { category: 'outcome_unknown', hint: 'Read back the affected trip before repeating the operation.', nextCommand: 'trek summary TRIP_ID' };
   if (/401|trek_ key|TOKEN is required/i.test(message)) {
     return { category: 'authentication', hint: 'The key is missing, malformed, expired, or revoked. Create a new Agent Key and run trek config init again.', nextCommand: 'trek config get' };
   }
@@ -458,7 +473,7 @@ function help() {
     `  tools [filter]\n` +
     `  call <tool-name> '<json>' | @/absolute/args.json\n` +
     `  summary <trip-id>\n` +
-    `  audit-plan <trip-id> <expected-assignments.json>\n` +
+    `  day-view <trip-id> <day-id>\n  set-day-brief <trip-id> <day-id> <text-or-@file>\n  audit-notes <trip-id> <expected-notes.json>\n  audit-plan <trip-id> <expected-assignments.json>\n` +
     `  add-pending <trip-id> <title> [--place-id <id>] [--place-name <name>] [--address <text>] [--description <text>] [--image-url <url>] [--website <url>] [--phone <text>] [--reason <text>] [--lat <number>] [--lng <number>]\n` +
     `  upload-file <trip-id> <absolute-file> [--assignment <id>] [--reservation <id>] [--place <id>] [--description <text>]\n` +
     `  set-cover <trip-id> <absolute-image> [--description <text>]\n` +
@@ -499,6 +514,28 @@ async function main() {
   if (command === 'config') return configCommand(args);
   if (command === 'skill') return skillCommand(args);
   if (command === 'update') return updateCommand(args);
+  const knownCommands = ['doctor', 'tools', 'call', 'summary', 'day-view', 'set-day-brief', 'audit-notes', 'audit-plan', 'add-pending', 'upload-file', 'set-cover', 'rename-file', 'batch', 'smoke'];
+  if (!knownCommands.includes(command)) throw new Error(`unknown_command: ${command}; use trek help. For trips use trek call list_trips '{}'`);
+  if (command === 'tools' && (args.length > 1 || args.some(arg => arg.startsWith('-')))) throw new Error('invalid_arguments: usage: trek tools [name-filter]');
+  if (command === 'call') {
+    if (!args[0] || args.length > 2 || args.some(arg => arg.startsWith('--'))) throw new Error('invalid_arguments: usage: trek call TOOL @args.json');
+    parseJsonArg(args[1]);
+  }
+  let dailyBrief;
+  let expectedNotes;
+  if (command === 'day-view' || command === 'set-day-brief') {
+    if (args.length !== (command === 'day-view' ? 2 : 3)) throw new Error(`invalid_arguments: ${command} requires trip-id day-id${command === 'set-day-brief' ? ' text-or-@file' : ''}`);
+    positiveId(args[0], 'trip-id'); positiveId(args[1], 'day-id');
+    if (command === 'set-day-brief') {
+      dailyBrief = (args[2].startsWith('@') ? requireFile(args[2].slice(1)) : args[2]).replace(/^\uFEFF/, '').trim();
+      if (dailyBrief.length > 500) throw new Error('invalid_arguments: daily brief exceeds 500 characters');
+    }
+  }
+  if (command === 'audit-notes') {
+    if (args.length !== 2) throw new Error('invalid_arguments: audit-notes requires trip-id expected-notes.json');
+    positiveId(args[0], 'trip-id');
+    expectedNotes = validateExpectedNotes(parseJsonArg('@' + args[1]));
+  }
   const checks = localDoctorChecks();
   const localFailure = checks.find((check) => !check.ok);
   if (!token && command !== 'doctor') throw new Error('TREK_MCP_TOKEN is required; run trek config init or provide it through an environment variable');
@@ -545,6 +582,23 @@ async function main() {
       if (!Number.isInteger(tripId) || tripId < 1) throw new Error('summary requires a positive trip ID');
       return print(await client.callTool('get_trip_summary', { tripId }));
     }
+    if (command === 'day-view' || command === 'set-day-brief') {
+      const tripId = positiveId(args[0], 'trip-id');
+      const dayId = positiveId(args[1], 'day-id');
+      if (command === 'set-day-brief') await client.callTool('update_day', { tripId, dayId, daily_brief: dailyBrief || null });
+      const view = await client.callTool('preview_day_view', { tripId, dayId });
+      if (command === 'set-day-brief' && (view.reminder?.content || '') !== dailyBrief) throw new Error('Daily brief readback mismatch; do not repeat the write before checking the day');
+      return print(view);
+    }
+    if (command === 'audit-notes') {
+      const tripId = positiveId(args[0], 'trip-id');
+      const summary = await client.callTool('get_trip_summary', { tripId, sections: ['days'] });
+      const results = auditDayNotes(summary.days || [], expectedNotes);
+      const ok = results.every(item => item.ok);
+      print({ ok, tripId, scope: 'day_notes_only', minimumMiniProgramVersion: '0.3.17', results });
+      if (!ok) process.exitCode = 2;
+      return;
+    }
     if (command === 'audit-plan') {
       const tripId = positiveId(args[0], 'trip-id');
       const expectedPath = args[1];
@@ -572,7 +626,7 @@ async function main() {
         return { date, dayId: day?.id ?? null, expected: expectedNames, actual: actualNames, missing, unexpected, ok: !!day && missing.length === 0 && unexpected.length === 0 };
       });
       const ok = results.every((item) => item.ok);
-      print({ ok, tripId, checkedDates: results.length, results });
+      print({ ok, tripId, scope: 'assignments_only', notesChecked: false, hint: 'Use audit-notes and day-view for notes/reminders; this does not verify the installed mini program.', checkedDates: results.length, results });
       if (!ok) process.exitCode = 2;
       return;
     }

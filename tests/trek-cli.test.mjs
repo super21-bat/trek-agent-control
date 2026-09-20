@@ -16,7 +16,6 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const cli = resolve('scripts/trek-mcp.mjs');
-const packageVersion = JSON.parse(readFileSync(resolve('package.json'), 'utf8')).version;
 
 function run(args, env = {}) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -29,7 +28,7 @@ function run(args, env = {}) {
 test('prints the packaged version without credentials', () => {
   const result = run(['--version']);
   assert.equal(result.status, 0);
-  assert.equal(result.stdout.trim(), packageVersion);
+  assert.equal(result.stdout.trim(), JSON.parse(readFileSync('package.json', 'utf8')).version);
 });
 
 test('initializes and redacts a local config', () => {
@@ -111,4 +110,37 @@ test('validates the bundled Skill and diagnoses a missing key', () => {
   assert.equal(report.ok, false);
   assert.equal(report.category, 'configuration');
   assert.ok(report.checks.some((check) => check.name === 'api-key' && !check.ok));
+});
+
+test('rejects bad command syntax locally instead of blaming credentials', () => {
+  const env = { TREK_CONFIG: join(mkdtempSync(join(tmpdir(), 'trek-args-')), 'config.json') };
+  for (const [args, category] of [
+    [['list-trips'], 'unknown_command'],
+    [['tools', 'list', '--json'], 'invalid_arguments'],
+    [['call', 'list_trips', '--args', '{}'], 'invalid_arguments'],
+    [['call', 'list_trips', '{broken'], 'invalid_json'],
+  ]) {
+    const result = run(args, env);
+    assert.equal(result.status, 1);
+    assert.equal(JSON.parse(result.stderr).error.category, category);
+  }
+});
+
+test('finds the Node npm entry in paths containing spaces without a command shell', async () => {
+  const { findPackageManagerEntry } = await import('../scripts/package-manager.mjs');
+  const directory = mkdtempSync(join(tmpdir(), 'trek npm path '));
+  const bin = join(directory, 'node_modules', 'npm', 'bin');
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(bin, 'npx-cli.js'), '// fixture');
+  assert.equal(findPackageManagerEntry('npx', [directory]), join(bin, 'npx-cli.js'));
+  assert.equal(findPackageManagerEntry('npm', [directory]), null);
+});
+
+test('daily brief commands reject invalid arguments before requesting credentials', () => {
+  for (const args of [['day-view', '1'], ['set-day-brief', '1', '2', 'x'.repeat(501)]]) {
+    const result = run(args);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr + result.stdout, /invalid_arguments/);
+    assert.doesNotMatch(result.stderr + result.stdout, /TOKEN is required/);
+  }
 });

@@ -94,3 +94,15 @@ Do not write anything for a briefing unless the user explicitly asks to update t
 - A social post is a recommendation signal, not proof of current policy.
 - A reservation is confirmed only with user/order evidence.
 - If exact time, address, price, phone or booking status is unknown, preserve the uncertainty in a todo or note.
+
+## Verify notes and daily reminders
+
+After synchronization, use `trek day-view TRIP_ID DAY_ID` to read the 0.3.17+ display contract. `audit-plan` verifies assignment names only; it does not verify notes, reminders, client version or screenshots.
+
+For timed notes, create an expected JSON file (no real user content in shared examples):
+
+```json
+{"2026-10-01":[{"text":"带好演出门票和证件","time":"18:00"}]}
+```
+
+Run `trek audit-notes TRIP_ID expected-notes.json`. Missing, unexpected or duplicate text/time entries fail the audit (exit 2). Read back the exact daily brief through `day-view`; do not write again simply because an old client cannot show it.

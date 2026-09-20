@@ -140,7 +140,7 @@ trek batch /absolute/path/actions.json --apply
 
 - GitHub 是 CLI 和 Skill 的发行源。
 - ClawHub 是 OpenClaw Skill 目录，审核完成后提供独立安装入口。
-- npm 包尚未作为正式入口时，以本 README 的 GitHub 安装命令为准。
+- npm 正式包为 `@trek-cn/cli`；GitHub 安装方式仍可使用。
 - GitHub、ClawHub、npm 三者的“已发布”状态必须分别验证。
 
 ## 开源与致谢
@@ -151,3 +151,13 @@ Trek 中国版复用并扩展开源项目
 
 GitHub 仓库内容按 [AGPL-3.0](LICENSE) 发布。发布到 ClawHub 的 Skill 副本
 遵循 ClawHub 平台规定的 MIT-0。
+
+## 每日提醒与备注（CLI 0.3.0 / 小程序 0.3.17+）
+
+```bash
+trek set-day-brief TRIP_ID DAY_ID @brief.txt
+trek day-view TRIP_ID DAY_ID
+trek audit-notes TRIP_ID expected-notes.json
+```
+
+今日提醒支持天气、穿搭和出门物品；清空后恢复所选日期天气。每日备注在当天备注列表显示，实际地点仍使用assignment。`day-view`返回展示契约，不证明手机已安装最新版；`audit-plan`只核对assignment，备注请用`audit-notes`。
