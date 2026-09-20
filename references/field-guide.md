@@ -132,20 +132,28 @@ Verify:
 - `packing.bags[]` includes empty bags as well as bags referenced by items
 - unresolved facts remain todos or explicit notes
 
-## Day view contract — mini program 0.3.17+
+## Day view contract — mini program 0.3.18+
 
 | User meaning | MCP write | Mini program visibility |
 | --- | --- | --- |
 | Short daily title | `update_day.title`, max 200; recommend <=25 characters | Date tab (one line) and section heading (two lines); long text is shortened |
-| Daily weather/clothing/tickets/things to bring | `update_day.daily_brief`, max 500; empty/null clears | Top 今日提醒; absent content falls back to weather for selected date and first located assignment |
+| Daily weather/clothing/tickets/things to bring | `update_day.daily_brief`, max 500; empty/null clears | Top 今日提醒; empty content is hidden; independent weather requires `weather_enabled=true` and an actual forecast for the selected date/first located assignment |
 | Timed action with no map stop | `create_day_note` / `update_day_note`: text max 500, optional time | 当天备注 rows, including existing stored notes; long text expands in place |
 | Actual visit/route stop | `assign_place_to_day`, `update_assignment_time` | Ordered itinerary and route map |
 | Visit instructions | Both tools above write the same assignment `notes` | 本次安排 in the visit details |
 | Hotel date range | `create_accommodation` | Reservation data; an assignment is still needed for a route stop |
 | Packing / budget / unassigned reservation | Respective tools | Their own sections, not automatic day itinerary rows |
 
-Do not substitute a long title for daily_brief. Do not invent nearby POIs for location-free actions. Do not delete or duplicate existing notes to compensate for old clients. Notes require mini program 0.3.17+; check the user's installed version when visibility is disputed.
+Do not substitute a long title for daily_brief. Do not invent nearby POIs for location-free actions. Do not delete or duplicate existing notes to compensate for old clients. Notes require mini program 0.3.18+; check the user's installed version when visibility is disputed.
 
 `preview_day_view {tripId,dayId}` returns authored reminder, date/location for weather lookup, renderedNotes and ordered renderedAssignments. Weather is not fetched by this preview. It is a server-side content contract, not a screenshot; assignment details require places:read. `get_trip_summary.days[].notes` contains note entries while REST days use `notes_items`.
 
-Weather guidance: research current weather before authoring a brief, distinguish forecast from historical climate, and include source/date in text when useful. Do not invent a forecast outside the provider window. Clearing the brief restores live date-specific weather; custom text stays exactly as authored until changed.
+Weather guidance: research current weather before authoring a brief, distinguish forecast from historical climate, and include source/date in text when useful. Do not invent a forecast outside the provider window. Clearing the brief hides it and does not enable weather; custom text stays exactly as authored until changed.
+
+### Optional day extras (0.3.18)
+
+- Day notes are grouped under “当天备注 · count”, collapsed by default. Expand to read; tap a note to edit/delete in place. Notes are not route/map stops. Empty notes and reminders have no content panel.
+- `update_day.weather_enabled` is an independent boolean, default false. Enable only when requested; clearing `daily_brief` never turns weather on. Dates beyond MET Norway's actual forecast (up to about nine days), missing coordinates, or unavailable forecasts show no weather card.
+- Weather is cached on the client for the day and shared by rounded location on the server. MET Norway attribution and update time are shown. Authored text is not automatically refreshed.
+- Use `preview_day_view.notesPresentation` to explain collapsed state; `renderedNotes` means available after expansion, not all rows visible on first opening. Preview does not fetch weather or prove a screenshot.
+- Keep each note as one action/supporting item (text <=500); `text` is the editable label/body, so no separate name field is needed. Assignment notes from assign/update tools refer to the same visit-specific field. Packing and budget remain in their own tabs; do not duplicate them as itinerary stops.

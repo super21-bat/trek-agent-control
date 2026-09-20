@@ -97,7 +97,7 @@ Do not write anything for a briefing unless the user explicitly asks to update t
 
 ## Verify notes and daily reminders
 
-After synchronization, use `trek day-view TRIP_ID DAY_ID` to read the 0.3.17+ display contract. `audit-plan` verifies assignment names only; it does not verify notes, reminders, client version or screenshots.
+After synchronization, use `trek day-view TRIP_ID DAY_ID` to read the 0.3.18+ display contract. `audit-plan` verifies assignment names only; it does not verify notes, reminders, client version or screenshots.
 
 For timed notes, create an expected JSON file (no real user content in shared examples):
 

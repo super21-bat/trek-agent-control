@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnPackageManager } from './package-manager.mjs';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
 
-const CLI_VERSION = '0.3.0';
+const CLI_VERSION = '0.3.1';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -595,7 +595,7 @@ async function main() {
       const summary = await client.callTool('get_trip_summary', { tripId, sections: ['days'] });
       const results = auditDayNotes(summary.days || [], expectedNotes);
       const ok = results.every(item => item.ok);
-      print({ ok, tripId, scope: 'day_notes_only', minimumMiniProgramVersion: '0.3.17', results });
+      print({ ok, tripId, scope: 'day_notes_only', minimumMiniProgramVersion: '0.3.18', results });
       if (!ok) process.exitCode = 2;
       return;
     }
