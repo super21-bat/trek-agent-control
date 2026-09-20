@@ -152,7 +152,7 @@ Trek 中国版复用并扩展开源项目
 GitHub 仓库内容按 [AGPL-3.0](LICENSE) 发布。发布到 ClawHub 的 Skill 副本
 遵循 ClawHub 平台规定的 MIT-0。
 
-## 每日提醒与备注（CLI 0.3.0 / 小程序 0.3.17+）
+## 每日提醒与备注（CLI 0.3.0 / 小程序 0.3.18+）
 
 ```bash
 trek set-day-brief TRIP_ID DAY_ID @brief.txt
