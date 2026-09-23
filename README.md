@@ -152,7 +152,7 @@ Trek 中国版复用并扩展开源项目
 GitHub 仓库内容按 [AGPL-3.0](LICENSE) 发布。发布到 ClawHub 的 Skill 副本
 遵循 ClawHub 平台规定的 MIT-0。
 
-## 每日提醒与备注（CLI 0.3.0 / 小程序 0.3.18+）
+## 每日提醒与备注（CLI 0.3.2 / 小程序 0.3.24+）
 
 ```bash
 trek set-day-brief TRIP_ID DAY_ID @brief.txt
@@ -160,4 +160,4 @@ trek day-view TRIP_ID DAY_ID
 trek audit-notes TRIP_ID expected-notes.json
 ```
 
-今日提醒支持天气、穿搭和出门物品；清空后恢复所选日期天气。每日备注在当天备注列表显示，实际地点仍使用assignment。`day-view`返回展示契约，不证明手机已安装最新版；`audit-plan`只核对assignment，备注请用`audit-notes`。
+今日提醒可写穿搭和出门物品，建议精简并用真实换行分开事项；0.3.24 起按行显示，字段是纯文本，不解析 Markdown。提醒为空即隐藏。天气按当天日期和已定位的安排自动查询：前9天使用MET Norway真实预报，延长预报到第15天，之后显示明确标注的历史气温预估，按天缓存。当天信息折叠区只包含提醒和备注；两者可在小程序原位增删改。实际地点仍使用assignment。`day-view`返回展示契约，不证明手机已安装最新版；`audit-plan`只核对assignment，备注请用`audit-notes`。

@@ -66,7 +66,7 @@ eventually refresh.
 4. Build a dated plan and an `expectedAssignmentsByDate` checklist containing every POI/activity that must appear in the mini program. Use exact local dates and times. Do not invent reservations, confirmation numbers, phone numbers, opening hours, prices, or addresses.
 5. Show the user a compact change preview before destructive, bulk, financial, membership, proposal-decision, or rescheduling writes.
 6. Write in small batches. Reuse existing entities and detect duplicates by normalized name/date before creating.
-7. Every real location visit must be a Place plus Assignment. Use `create_and_assign_place` for a new POI and `assign_place_to_day` for an existing one. Location-free actions (wake up, bring tickets, meet a friend) can be timed day notes: visible in the day-notes section in mini program 0.3.18+, but not map stops. Never fabricate a POI just to make a note visible; older clients must upgrade.
+7. Every real location visit must be a Place plus Assignment. Use `create_and_assign_place` for a new POI and `assign_place_to_day` for an existing one. Location-free actions (wake up, bring tickets, meet a friend) can be timed day notes: visible in the notes part of the collapsed day-information section in mini program 0.3.18+, but not map stops. Never fabricate a POI just to make a note visible; older clients must upgrade.
 8. Model accommodation separately. `create_place_accommodation`/`create_accommodation` create a lodging date range but no visible day assignment. If a hotel or check-in is in the daily plan, also assign its place to that day.
 9. Populate only meaningful fields, but use the complete model when relevant: trip dates/description, days, places and coordinates, assignment start/end/duration/transport/notes, reservations, accommodations, costs, packing, todos, collaboration notes, proposals and members.
 10. Read back with `get_trip_summary` plus the relevant `list_*` tool. Compare `expectedAssignmentsByDate` to actual `days[].assignments` by date and normalized place name/ID, not only counts. A planned day must not have zero assignments; explicitly document intentional rest/location-free travel days.
@@ -117,17 +117,17 @@ trek smoke --allow-write-smoke
 
 When native MCP and the bundled client disagree, trust a fresh `tools/list` response and production readback.
 
-## Daily notes and reminders (mini program 0.3.18+)
+## Daily notes and reminders (mini program 0.3.22+)
 
-- Keep day titles short (about 25 characters). Use `update_day.daily_brief` for a user-authored weather/clothing/tickets/packing reminder, up to 500 characters; empty or null hides the reminder; weather is independent and off by default. Enable it only when requested via `update_day.weather_enabled=true`. `trek set-day-brief <trip-id> <day-id> @brief.txt` writes and reads back.
-- `create_day_note` stores a timed action in the visible day-notes section, without adding a map stop. These notes were invisible in 0.3.16 and older.
+- Keep day titles short (about 25 characters). Use `update_day.daily_brief` for an optional user-authored clothing/tickets/packing reminder, up to 500 characters. Keep it concise, use actual newline characters to separate ideas, and avoid Markdown because the mini program renders plain text; empty or null hides the reminder. Mini program 0.3.24+ renders each line separately. `trek set-day-brief <trip-id> <day-id> @brief.txt` preserves line breaks from the file; a literal `\n` in a CLI argument is also normalized. Weather appears automatically below the day title when location and data are available: MET Norway is preferred for the first nine days, extended forecasts cover days 10–15, and dates beyond day 15 show a clearly labeled historical temperature estimate. It refreshes at most once per day. Do not set or ask the user to set `weather_enabled`.
+- `create_day_note` stores a timed action in the notes part of the collapsed day-information section, without adding a map stop. These notes were invisible in 0.3.16 and older.
 - `trek day-view <trip-id> <day-id>` / `preview_day_view` returns the content contract and minimum client version, not a screenshot or proof the user installed that version. Compare notes using `trek audit-notes <trip-id> expected-notes.json`; `audit-plan` checks assignments only.
 - Use the current authorized tool schema. With semantic profile, discover these advanced tools and reconnect using full profile if needed. For exact fields and boundaries read [references/field-guide.md](references/field-guide.md).
 
 ### Optional day extras (0.3.18)
 
 - Day notes are grouped under “当天备注 · count”, collapsed by default. Expand to read; tap a note to edit/delete in place. Notes are not route/map stops. Empty notes and reminders have no content panel.
-- `update_day.weather_enabled` is an independent boolean, default false. Enable only when requested; clearing `daily_brief` never turns weather on. Dates beyond MET Norway's actual forecast (up to about nine days), missing coordinates, or unavailable forecasts show no weather card.
+- Weather is derived from the day's date and first located assignment, not a user-managed field. Missing coordinates or unavailable forecast/reference data produce no weather summary. Reminder and notes are the only editable sections in the day-information disclosure. Dates beyond day 15 use a historical temperature estimate, never a real forecast.
 - Weather is cached on the client for the day and shared by rounded location on the server. MET Norway attribution and update time are shown. Authored text is not automatically refreshed.
 - Use `preview_day_view.notesPresentation` to explain collapsed state; `renderedNotes` means available after expansion, not all rows visible on first opening. Preview does not fetch weather or prove a screenshot.
 - Keep each note as one action/supporting item (text <=500); `text` is the editable label/body, so no separate name field is needed. Assignment notes from assign/update tools refer to the same visit-specific field. Packing and budget remain in their own tabs; do not duplicate them as itinerary stops.

@@ -527,7 +527,7 @@ async function main() {
     if (args.length !== (command === 'day-view' ? 2 : 3)) throw new Error(`invalid_arguments: ${command} requires trip-id day-id${command === 'set-day-brief' ? ' text-or-@file' : ''}`);
     positiveId(args[0], 'trip-id'); positiveId(args[1], 'day-id');
     if (command === 'set-day-brief') {
-      dailyBrief = (args[2].startsWith('@') ? requireFile(args[2].slice(1)) : args[2]).replace(/^\uFEFF/, '').trim();
+      dailyBrief = (args[2].startsWith('@') ? requireFile(args[2].slice(1)) : args[2]).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').replace(/\\n/g, '\n').trim();
       if (dailyBrief.length > 500) throw new Error('invalid_arguments: daily brief exceeds 500 characters');
     }
   }
