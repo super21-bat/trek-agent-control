@@ -55,6 +55,7 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 | User meaning | MCP field/tool | Mini program visibility |
 | --- | --- | --- |
 | Instructions for this specific visit | `update_assignment_time.notes` | `本次安排` in the assignment detail |
+| Start/end time for this visit | `create_and_assign_place.place_time` / `.end_time` for a new place; `assign_place_to_day.place_time` / `.end_time` for a saved place; `update_assignment_time` for later edits | Time shown on that day's assignment, not a reusable place field |
 | Stable POI introduction | `create_place.description` / `update_place.description` | `地点信息 → 地点介绍`, shown automatically when non-empty |
 | Reusable POI caveat | `create_place.notes` / `update_place.notes` | `地点信息 → 地点备注`, shown automatically when non-empty |
 | Address and contact | place `address`, `phone`, `website` | Primary address facts plus direct phone/website actions |
@@ -109,6 +110,8 @@ The mini program opens an itinerary detail sheet when the user taps a day assign
 ```
 
 Without `--apply`, the client prints the planned calls and performs no tools. With `--apply`, calls run sequentially and stop on the first error. Every result has the same compatibility envelope: `ok`, `resourceType`, `resource`, `warnings`, and the original tool payload in `result`. Tool names containing delete/remove/decide/schedule/settle/restore/rotate require `--confirm-high-risk`.
+
+For a new timed stop, put `place_time` and `end_time` in the `create_and_assign_place` action's `arguments` alongside `tripId`, `dayId`, and `name`. For an existing saved place, use `assign_place_to_day` with the same time fields. One action creates the timed visit; the batch format does not interpolate an `assignmentId` from an earlier action. Read back `days[].assignments` after applying the batch.
 
 ## Readback checklist
 

@@ -14,7 +14,7 @@
 1. `list_trips` and normalize titles/dates to detect an existing trip.
 2. Create only when no match exists; otherwise use the current trip ID.
 3. `get_trip_summary` and map its day IDs to ISO dates.
-4. Create/reuse places, then assign every expected POI/activity to the correct day with start/end time, duration, transport mode and assignment notes. New place: `create_and_assign_place`; existing place: `assign_place_to_day`.
+4. Create/reuse places, then assign every expected POI/activity to the correct day with start/end time, duration, transport mode and assignment notes. New place: `create_and_assign_place`; existing place: `assign_place_to_day`. Pass `place_time`/`end_time` in that same creation call when known; both fields belong to the daily assignment. Use `update_assignment_time` only for later edits. A CLI batch can therefore contain one create action per visit without referencing a previous action's assignment ID.
 5. Add reservations/accommodations only from evidence. Accommodation tools create a date range, not a daily assignment; if the hotel/check-in is part of the visible daily plan, also assign the hotel place to that day.
 6. Add costs as estimates unless receipts/orders establish actual values.
 7. Add packing items for traveler and destination needs.

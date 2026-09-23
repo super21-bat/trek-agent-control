@@ -122,7 +122,7 @@ trek batch /absolute/path/actions.json
 trek batch /absolute/path/actions.json --apply
 ```
 
-`batch` 默认只预览；高风险操作需要额外确认。生产诊断默认只读。
+`batch` 默认只预览；高风险操作需要额外确认。新增日程时可直接在 `create_and_assign_place`（已有地点用 `assign_place_to_day`）中传 `place_time` 和 `end_time`，单条动作即可保存当天时间，无需先取 assignmentId 再拆第二批。生产诊断默认只读。
 `doctor` 会在线完成 MCP 初始化、工具发现和 `list_trips` 回读，因此也能识别
 已撤销或无效的 Key；输出只显示 `configured`，不会暴露 Key 的任何片段。
 
@@ -152,7 +152,7 @@ Trek 中国版复用并扩展开源项目
 GitHub 仓库内容按 [AGPL-3.0](LICENSE) 发布。发布到 ClawHub 的 Skill 副本
 遵循 ClawHub 平台规定的 MIT-0。
 
-## 每日提醒与备注（CLI 0.3.2 / 小程序 0.3.24+）
+## 每日提醒与备注（CLI 0.3.3 / 小程序 0.3.24+）
 
 ```bash
 trek set-day-brief TRIP_ID DAY_ID @brief.txt
