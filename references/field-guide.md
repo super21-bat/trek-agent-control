@@ -160,3 +160,7 @@ Weather guidance: research current weather before authoring a brief, distinguish
 - Weather is cached for a day on the client and shared by rounded location on the server. The mini program shows a compact summary below the day title; source and update metadata stay in the provider/service contract. Authored text is not automatically refreshed.
 - Use `preview_day_view.notesPresentation` to explain collapsed state; `renderedNotes` means available after expansion, not all rows visible on first opening. Preview does not fetch weather or prove a screenshot.
 - Keep each note as one action/supporting item (text <=500); `text` is the editable label/body, so no separate name field is needed. Assignment notes from assign/update tools refer to the same visit-specific field. Packing and budget remain in their own tabs; do not duplicate them as itinerary stops.
+
+## Per-visit arrival contract
+
+Before writing arrival modes, read [arrival-mode.md](arrival-mode.md). Creation and assignment update tools accept transport_mode, transport_source and transport_reason. Read these at assignment level, not only place level; manual choices are protected. New inference is a planning estimate, not a reservation.

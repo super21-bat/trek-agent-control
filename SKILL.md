@@ -1,6 +1,6 @@
 ---
 name: trek-agent-control
-description: 配套 Trek 微信旅行小程序的自动化 Skill，主要面向 WorkBuddy，也兼容 Codex、Claude、OpenClaw、Hermes 等 Agent。通过认证的远程 MCP 研究国内外目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步回小程序。Use when WorkBuddy or another agent needs to plan travel, inspect Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
+description: 配套搭子路书（Trek）微信旅行小程序的自动化 Skill，主要面向 WorkBuddy，也兼容 Codex、Claude、OpenClaw、Hermes 等 Agent。通过认证的远程 MCP 研究国内外目的地、读取或修改行程，并把日程、地点、预订、住宿、费用、清单、待办、附件和协作提案安全同步回小程序。Use when WorkBuddy or another agent needs to plan travel, inspect Trek data, synchronize structured itinerary fields, upload tickets, or run safe diagnostics with a user-provided Trek Agent Key.
 ---
 
 # Trek Agent Control
@@ -131,3 +131,7 @@ When native MCP and the bundled client disagree, trust a fresh `tools/list` resp
 - Weather is cached on the client for the day and shared by rounded location on the server. MET Norway attribution and update time are shown. Authored text is not automatically refreshed.
 - Use `preview_day_view.notesPresentation` to explain collapsed state; `renderedNotes` means available after expansion, not all rows visible on first opening. Preview does not fetch weather or prove a screenshot.
 - Keep each note as one action/supporting item (text <=500); `text` is the editable label/body, so no separate name field is needed. Assignment notes from assign/update tools refer to the same visit-specific field. Packing and budget remain in their own tabs; do not duplicate them as itinerary stops.
+
+## 到达方式（schema183 / 小程序0.3.35+）
+
+每次安排独立设置到达方式，不按地点全局批量修改。未明确时根据上一站、实际路线、同行者与时间余量合理推断，标记 inferred 并写依据；明确指定或有凭据才标 confirmed。人工 manual 值保持优先。接送机用taxi，实际航班才用flight；机场节点不能一律flight。同一酒店不同次独立设置。同步前读 [references/arrival-mode.md](references/arrival-mode.md) 并核对实时Schema；字段缺失时只交付建议，不假装同步成功。
