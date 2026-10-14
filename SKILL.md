@@ -132,6 +132,10 @@ When native MCP and the bundled client disagree, trust a fresh `tools/list` resp
 - Use `preview_day_view.notesPresentation` to explain collapsed state; `renderedNotes` means available after expansion, not all rows visible on first opening. Preview does not fetch weather or prove a screenshot.
 - Keep each note as one action/supporting item (text <=500); `text` is the editable label/body, so no separate name field is needed. Assignment notes from assign/update tools refer to the same visit-specific field. Packing and budget remain in their own tabs; do not duplicate them as itinerary stops.
 
+## 跨零点（schema184 / 小程序0.3.36+）
+
+保留用户选择的所属行程日，凌晨接机用正常HH:mm及start/end_day_offset=1，不自动移到第二天，也不用25:00。跨时区航班分别填出发/抵达当地时区。同步前读[references/cross-midnight.md](references/cross-midnight.md)，核对归属日、实际日期与UTC时刻。旧数据不盲目推断，省略字段保留。
+
 ## 到达方式（schema183 / 小程序0.3.35+）
 
 每次安排独立设置到达方式，不按地点全局批量修改。未明确时根据上一站、实际路线、同行者与时间余量合理推断，标记 inferred 并写依据；明确指定或有凭据才标 confirmed。人工 manual 值保持优先。接送机用taxi，实际航班才用flight；机场节点不能一律flight。同一酒店不同次独立设置。同步前读 [references/arrival-mode.md](references/arrival-mode.md) 并核对实时Schema；字段缺失时只交付建议，不假装同步成功。

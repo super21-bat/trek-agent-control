@@ -1,5 +1,7 @@
 # Dynamic tool and field guide
 
+For overnight visits read [cross-midnight.md](cross-midnight.md): grouping day_id is independent of actual start/end dates and zones. Use assignment date offsets, never modify a reusable Place to change one visit date.
+
 Always discover the live schemas with `tools/list`. The server evolves and the live schema is authoritative.
 
 ## Core read path

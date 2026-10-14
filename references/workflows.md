@@ -1,5 +1,7 @@
 # Research and synchronization workflows
 
+For visits after midnight, keep the intended grouping day and apply the explicit date offsets described in [cross-midnight.md](cross-midnight.md). Check actual local dates and zones when reading back; do not automatically move the visit to another day.
+
 ## Research a new trip
 
 1. Collect hard constraints: travelers, ages, accessibility, origin, dates, fixed bookings, work/school windows, budget and transport.
