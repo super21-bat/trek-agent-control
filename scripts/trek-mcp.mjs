@@ -15,13 +15,19 @@ import {
 } from 'node:fs';
 import { auditDayNotes, validateExpectedNotes } from './day-audit.mjs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, isAbsolute as isAbsoluteFilmPath } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { spawnPackageManager } from './package-manager.mjs';
 import { normalizeBatchError, normalizeBatchResult } from './batch-result.mjs';
+import {filmDoctor,renderLocalFilm,readFilmExport} from './film-render.mjs';
+import {creativeCapabilities,buildCreativeBrief,filmTemplate} from './film-creative.mjs';
+import {setupFilmRuntime} from './film-setup.mjs';
+import {installFilmSource} from './film-source.mjs';
+import {auditFilmSelection} from './film-selection.mjs';
+import {createHash} from 'node:crypto';
 
-const CLI_VERSION = '0.3.1';
+const CLI_VERSION = '0.4.0-dev.9';
 const DEFAULT_ENDPOINT = 'https://api.superd.fun/mcp';
 const NPM_PACKAGE = '@trek-cn/cli';
 const GITHUB_INSTALL_SPEC = 'https://github.com/super21-bat/trek-agent-control/archive/refs/heads/main.tar.gz';
@@ -439,6 +445,7 @@ function localDoctorChecks() {
 
 function diagnostic(error) {
   const message = String(error?.message || error);
+  if(/local_renderer|local render|sandbox|Pinned local|Linux Docker/.test(message))return{category:'local_renderer',hint:'Rendering runs on this computer, not the Trek server. Read references/travel-film.md; use film install-runtime for the pinned source rebuild or an existing verified runtime. Do not recreate Agent Keys or fall back to cloud rendering.',nextCommand:'trek film doctor'};
   if (/invalid_json|invalid_arguments|unknown_command/.test(message)) return { category: message.split(':')[0], hint: message, nextCommand: 'trek help' };
   if (/outcome unknown/.test(message)) return { category: 'outcome_unknown', hint: 'Read back the affected trip before repeating the operation.', nextCommand: 'trek summary TRIP_ID' };
   if (/401|trek_ key|TOKEN is required/i.test(message)) {
@@ -476,6 +483,8 @@ function help() {
     `  day-view <trip-id> <day-id>\n  set-day-brief <trip-id> <day-id> <text-or-@file>\n  audit-notes <trip-id> <expected-notes.json>\n  audit-plan <trip-id> <expected-assignments.json>\n` +
     `  add-pending <trip-id> <title> [--place-id <id>] [--place-name <name>] [--address <text>] [--description <text>] [--image-url <url>] [--website <url>] [--phone <text>] [--reason <text>] [--lat <number>] [--lng <number>]\n` +
     `  upload-file <trip-id> <absolute-file> [--assignment <id>] [--reservation <id>] [--place <id>] [--description <text>]\n` +
+    `  film capabilities\n  film setup /absolute/runtime-bundle.json --output /absolute/runtime.json [--confirm-load]\n  film doctor [--template globe|city|journal]\n  film audit-selection <trip-id> --assignments 1,2,3\n  film brief /absolute/export.json --template globe|city|journal\n  film export <trip-id> --assignments 1,2 --output /absolute/export.json --confirm-public-stops\n  film render /absolute/export.json /absolute/output.mp4 [--template globe|city|journal --map MAP.json --road ROUTES.json --infer-flights 1,5]\n  film publish <trip-id> /absolute/output.mp4 --export /absolute/export.json --confirm-share\n` +
+    `  film install-runtime --output /absolute/runtime.json [--confirm-build] [--source /absolute/runtime-source.json]\n` +
     `  set-cover <trip-id> <absolute-image> [--description <text>]\n` +
     `  rename-file <trip-id> <file-id> <display-filename>\n` +
     `  batch <actions.json> [--apply] [--confirm-high-risk]\n` +
@@ -510,11 +519,53 @@ async function main() {
   await installNodeHelpers();
   const [command = 'help', ...args] = process.argv.slice(2);
   if (command === 'help' || command === '--help' || command === '-h') return help();
+  if(command==='film'&&args[0]==='audit-selection'&&(args.length!==4||!Number.isSafeInteger(Number(args[1]))||Number(args[1])<=0||args[2]!=='--assignments'||!/^[1-9]\d*(?:,[1-9]\d*)+$/.test(args[3])))throw Error('invalid_arguments: film audit-selection TRIP --assignments 1,2,3');
+  if(command==='film'&&args[0]==='setup'){
+    if(![4,5].includes(args.length)||args[2]!=='--output'||(args.length===5&&args[4]!=='--confirm-load'))throw Error('invalid_arguments: film setup MANIFEST --output RUNTIME.json [--confirm-load]');
+    return print(await setupFilmRuntime(args[1],args[3],args[4]==='--confirm-load'));
+  }
+  if(command==='film'&&args[0]==='install-runtime'){
+    if(args[1]!=='--output'||!args[2])throw Error('invalid_arguments: film install-runtime --output /absolute/runtime.json [--confirm-build] [--source /absolute/runtime-source.json]');
+    const seen=new Set();let confirmBuild=false,sourceFile;
+    for(let i=3;i<args.length;i++){
+      const flag=args[i];if(seen.has(flag))throw Error('invalid_arguments: duplicate install option');seen.add(flag);
+      if(flag==='--confirm-build')confirmBuild=true;
+      else if(flag==='--source'&&args[i+1])sourceFile=args[++i];
+      else throw Error('invalid_arguments: unknown install-runtime option');
+    }
+    return print(await installFilmSource(args[2],{confirmBuild,sourceFile}));
+  }
+  if(command==='film'&&args[0]==='capabilities'){
+    if(args.length!==1)throw Error('invalid_arguments: usage: trek film capabilities');
+    return print(creativeCapabilities());
+  }
+  if(command==='film'&&args[0]==='brief'){
+    if(args.length!==4||args[2]!=='--template')throw Error('invalid_arguments: usage: trek film brief /absolute/export.json --template globe|city|journal');
+    return print(buildCreativeBrief(args[1],args[3]));
+  }
+  if(command==='film'&&args[0]==='doctor'){
+    if(args.length===3&&args[1]==='--template'){
+      const template=filmTemplate(args[2]);return print(filmDoctor({template:template.id}));
+    }
+    if(args.length!==1)throw Error('invalid_arguments: usage: trek film doctor [--template globe|city|journal]');
+    return print(filmDoctor());
+  }
+  if(command==='film'&&args[0]==='render'){
+    const options={};const seen=new Set();
+    for(let i=3;i<args.length;i+=2){
+      const flag=args[i],value=args[i+1];if(!['--template','--map','--road','--infer-flights'].includes(flag)||!value||seen.has(flag))throw Error('invalid_arguments: render expects paired --template --map --road --infer-flights');seen.add(flag);
+      if(flag==='--template')options.template=filmTemplate(value).id;
+      if(flag==='--map')options.map=value;if(flag==='--road')options.road=value;
+      if(flag==='--infer-flights')options.inferredFlightLegs=value.split(',').map(Number);
+    }
+    if(args.length<3||(!options.template&&seen.size)||(options.template&&!options.map))throw Error('invalid_arguments: render EXPORT MP4 [--template ID --map MAP --road ROAD --infer-flights 1,2]');
+    return print(renderLocalFilm(args[1],args[2],options));
+  }
   if (command === '--version' || command === '-v' || command === 'version') return process.stdout.write(`${packageVersion()}\n`);
   if (command === 'config') return configCommand(args);
   if (command === 'skill') return skillCommand(args);
   if (command === 'update') return updateCommand(args);
-  const knownCommands = ['doctor', 'tools', 'call', 'summary', 'day-view', 'set-day-brief', 'audit-notes', 'audit-plan', 'add-pending', 'upload-file', 'set-cover', 'rename-file', 'batch', 'smoke'];
+  const knownCommands = ['doctor', 'tools', 'call', 'summary', 'day-view', 'set-day-brief', 'audit-notes', 'audit-plan', 'add-pending', 'upload-file', 'set-cover', 'rename-file', 'batch', 'smoke','film'];
   if (!knownCommands.includes(command)) throw new Error(`unknown_command: ${command}; use trek help. For trips use trek call list_trips '{}'`);
   if (command === 'tools' && (args.length > 1 || args.some(arg => arg.startsWith('-')))) throw new Error('invalid_arguments: usage: trek tools [name-filter]');
   if (command === 'call') {
@@ -723,6 +774,41 @@ async function main() {
         reservation_id: positiveId(optionValue(args, '--reservation'), 'reservation'),
         place_id: positiveId(optionValue(args, '--place'), 'place'),
       }));
+    }
+    if(command==='film'){
+      const action=args[0],tripId=positiveId(args[1],'trip-id');
+      if(action==='audit-selection'){
+        if(args.length!==4||args[2]!=='--assignments')throw Error('invalid_arguments: film audit-selection TRIP --assignments 1,2,3');
+        const ids=args[3].split(',').map(v=>positiveId(v,'assignment'));const summary=await client.callTool('get_trip_summary',{tripId});
+        return print({ok:true,tripId,...auditFilmSelection(summary.days||[],ids),productionWrites:false});
+      }
+      if(action==='export'){
+        filmDoctor();
+        if(!args.includes('--confirm-public-stops'))throw Error('Confirm public highlights/title/dates before export');
+        const selectedAssignmentIds=(optionValue(args,'--assignments')||'').split(',').map(v=>positiveId(v,'assignment'));
+        const output=optionValue(args,'--output');if(!output||!isAbsoluteFilmPath(output))throw Error('Use --output /absolute/private-export.json');
+        if(!names.has('export_travel_film_plan'))throw Error('Local film export is unavailable on this server');
+        const summary=await client.callTool('get_trip_summary',{tripId});
+        const selectionAudit=auditFilmSelection(summary.days||[],selectedAssignmentIds);
+        if(selectionAudit.requiresChapterSplit)throw Error('Split the selected itinerary into chapters of at most ten; never truncate silently');
+        const result=await client.callTool('export_travel_film_plan',{tripId,selectedAssignmentIds,confirmedPublicStops:true});
+        if(!result?.exportId||!result?.plan)throw Error('Film export failed; no plan returned');
+        writeFileSync(output,JSON.stringify({...result,selectionAudit},null,2),{flag:'wx',mode:0o600});
+        return print({ok:true,exportId:result.exportId,path:output,selectionAudit,rendered:false,uploaded:false});
+      }
+      if(action==='publish'){
+        if(!args.includes('--confirm-share'))throw Error('Ask user before sharing film with current trip members');
+        const exported=readFilmExport(optionValue(args,'--export')||'');if(exported.plan.tripId!==tripId)throw Error('Film belongs to a different trip');
+        const file=args[2];if(!file||!isAbsoluteFilmPath(file)||!lstatSync(file).isFile()||lstatSync(file).size>10*1024*1024)throw Error('Use a regular MP4 up to 10MB');
+        const bytes=readFileSync(file),receipt=JSON.parse(readFileSync(`${file}.receipt.json`,'utf8'));
+        if(!receipt.localDecodeVerified||receipt.exportId!==exported.exportId||receipt.fingerprint!==exported.plan.fingerprint||receipt.sha256!==createHash('sha256').update(bytes).digest('hex'))throw Error('Local render receipt mismatch; verify/render again');
+        if(!names.has('publish_travel_film')||!names.has('list_travel_films'))throw Error('Film upload/readback unavailable on this server');
+        const result=await client.callTool('publish_travel_film',{tripId,exportId:exported.exportId,content_base64:bytes.toString('base64'),confirmedShareWithTrip:true});
+        const after=await client.callTool('list_travel_films',{tripId});
+        if(!result?.file?.id||!after.films?.some(f=>f.file.id===result.file.id))throw Error('Film upload readback failed; inspect list before retrying');
+        return print({ok:true,fileId:result.file.id,duplicate:result.duplicate,verified:true,miniappPage:after.miniappPage});
+      }
+      throw Error('usage: trek film doctor | export TRIP --assignments 1,2 --output PATH --confirm-public-stops | render EXPORT MP4 | publish TRIP MP4 --export EXPORT --confirm-share');
     }
     if (command === 'set-cover') {
       const tripId = positiveId(args[0], 'trip-id');

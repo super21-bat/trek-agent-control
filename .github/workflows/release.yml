@@ -36,6 +36,13 @@ jobs:
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           test "${GITHUB_REF_NAME}" = "v${PACKAGE_VERSION}"
-      - run: npm publish --access public
+      - name: Publish stable or candidate without replacing stable latest
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if [[ "$PACKAGE_VERSION" == *-* ]]; then
+            npm publish --access public --tag next
+          else
+            npm publish --access public --tag latest
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

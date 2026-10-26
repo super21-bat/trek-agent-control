@@ -37,6 +37,8 @@ The mini program presents this to ordinary users as two steps: copy once, then s
 
 ## Fast paths for common user requests
 
+旅行短片是高级可选能力：用户请求时先读[references/travel-film.md](references/travel-film.md)，检查本地执行环境，再确认重点站点。MCP只导出受控计划、查询和接收用户确认的成片；本地CLI渲染，小程序查看。不要调用旧`create_travel_film`服务器排队流程；缺少当前工具时如实说明尚不可用，不假装已生成。
+
 Do not load the large-planning workflow for these small writes. Use the exact
 recipe, then stop:
 

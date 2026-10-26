@@ -50,6 +50,28 @@ Agent 搜寻攻略、交通、餐饮和预订信息
 - 写入后自动回读，核对计划是否真正出现在小程序对应位置。
 - 使用 `doctor` 检查配置、网络、鉴权、工具发现与读取能力。
 
+## 可选：旅行地图短片（0.4 候选）
+
+用户可在小程序选择模板并复制创作任务给本地 Agent。Agent 分析完整行程，
+按日期/城市选取多站，生成地球俯冲、道路车辆或计划航线短片；不是简单两点连线。
+候选CLI为`0.4.0-rc.1`；以实际npm版本及实时MCP工具为准，旧生产服务未升级时不宣称可用。
+
+渲染在用户电脑，不占用小程序服务器。只有请求短片时才安装依赖：
+
+```bash
+trek film capabilities
+trek film install-runtime --output /absolute/private-dir/runtime.json
+# 查看预览并同意联网下载/构建后，再执行：
+trek film install-runtime --output /absolute/private-dir/runtime.json --confirm-build
+TREK_FILM_RUNTIME=/absolute/private-dir/runtime.json trek film doctor --template globe
+```
+
+要求本机Linux/amd64 Docker（包括合适架构的桌面虚拟机）、cgroup v2及ffmpeg/ffprobe。
+源码包URL和SHA256固定在CLI内；不会自动安装任意引擎、停止其他容器或覆盖已有配置。
+约7MB源码与字体材料不含容器镜像；构建另需联网下载基础环境及依赖，实际渲染禁网。
+不支持的环境仍可正常规划行程，不需要重建Agent Key。先交付本地预览，用户确认后再同步给同行者。
+详细流程见[旅行短片指引](references/travel-film.md)。
+
 ## 两步连接 WorkBuddy
 
 1. 在 Trek 小程序“我的”页面点“创建并复制”。

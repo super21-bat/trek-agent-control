@@ -132,7 +132,7 @@ gh run watch --repo super21-bat/trek-agent-control
 ```bash
 diff -ru \
   --exclude .git \
-  /path/to/trek-cn-rebuild/agent-packages/trek-agent-control \
+  /path/to/dazi-travel/agent-packages/trek-agent-control \
   /path/to/trek-agent-control
 ```
 
@@ -154,6 +154,15 @@ diff -ru \
 4. 创建与版本一致的标签，例如 `v0.2.0`。
 5. 推送标签，等待 `.github/workflows/release.yml`。
 6. npm `NPM_TOKEN` 未配置时，GitHub 安装方式仍是正式入口，不能宣称 npm 已发布。
+
+带`-rc`等预发行后缀的版本只发布到npm `next`，GitHub Release标记prerelease；
+不得覆盖稳定`latest`。候选验证通过后再用新的正式版本号发布，不覆盖已发版本或标签。
+
+旅行短片源码安装额外要求：先生成仅白名单源文件/原字体/地图轮廓及许可的源码资产，
+核对固定引擎提交和逐文件哈希；在CLI中固定资产URL及整个文件SHA256。资产发布后必须
+从公开URL实测下载安装、doctor、多站生成和回传，不用本机`--source`测试冒充公网下载。
+源码包不含OS/浏览器/FFmpeg二进制，不等于批准公开Docker归档；私有镜像保持私有。
+主项目锁文件、安装器、发布说明和四份WorkBuddy参考必须同步归档。
 
 ```bash
 git tag -a v0.2.0 -m "v0.2.0"
